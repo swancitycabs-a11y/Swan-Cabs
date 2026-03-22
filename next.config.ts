@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
     ];
+    
   },
 };
 
