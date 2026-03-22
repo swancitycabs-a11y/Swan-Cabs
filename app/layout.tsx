@@ -8,7 +8,7 @@ import Footer from "./components/Footer";
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 
 export const metadata = {
-  title: "Swan City Cabs",
+  title: "Swan Cabs",
   description: "A taxi service based out of Perth",
 };
 
