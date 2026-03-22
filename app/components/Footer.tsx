@@ -4,9 +4,9 @@ export default function Footer() {
       <div className="container">
         <div className="grid cols-2" style={{ alignItems: "center" }}>
           <div>
-            <div style={{ fontWeight: 800 }}>Swan City Cabs</div>
+            <div style={{ fontWeight: 800 }}>Swan Cabs</div>
             <div className="small" style={{ marginTop: 6 }}>
-              © {new Date().getFullYear()} Swan City Cabs. All rights reserved.
+              © {new Date().getFullYear()} Swan Cabs. All rights reserved.
             </div>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 14 }}>
