@@ -37,7 +37,7 @@ export default function Header() {
       <div className="container headerInner">
         {/* Brand */}
         <Link href="/" className="brandBlock" onClick={() => setMenuOpen(false)}>
-  <div className="brandName">Swan City Cabs</div>
+  <div className="brandName">Swan Cabs</div>
   <div className="brandTag">Available 24/7</div>
 </Link>
 
