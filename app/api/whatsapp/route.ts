@@ -75,7 +75,7 @@ export async function POST(req: Request) {
         ? `$ ${Number(booking.estimatedFare).toFixed(2)}`
         : "-";
 
-    const message = `🚕 *NEW TAXI BOOKING RECEIVED*
+    const message = `🚕 *SWAN CABS BOOKING*
 
 👤 Name :- ${booking.name || "-"}
 📞 Phone :- ${booking.phone || "-"}
