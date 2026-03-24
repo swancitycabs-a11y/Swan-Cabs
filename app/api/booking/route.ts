@@ -108,6 +108,9 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
+    // ✅ STEP 1: BOOKING ID
+    const bookingId = "SC-" + Date.now();
+
     const pickup = String(body?.pickup || "");
     const dropoff = String(body?.dropoff || "");
     const name = String(body?.name || "");
@@ -169,6 +172,9 @@ export async function POST(req: Request) {
     const payload = {
       ...body,
 
+      bookingId, // ✅ IMPORTANT
+
+
       estimatedFare: safeFare, // ⭐ SERVER PROTECTED PRICE
 
       pickupDay: pickupDay,
@@ -212,7 +218,11 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json({ ok: true });
+    // ✅ RETURN bookingId
+    return NextResponse.json({
+      ok: true,
+      bookingId,
+    });
   } catch (e: any) {
     return NextResponse.json(
       { ok: false, error: e?.message ?? "Unknown error" },
