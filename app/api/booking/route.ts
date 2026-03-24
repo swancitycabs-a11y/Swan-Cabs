@@ -109,8 +109,18 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     // ✅ STEP 1: BOOKING ID
-    const bookingId = "SC-" + Date.now();
+   function generateBookingId() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no confusing chars
+  let result = "SC-";
 
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+
+  return result;
+}
+
+const bookingId = generateBookingId();
     const pickup = String(body?.pickup || "");
     const dropoff = String(body?.dropoff || "");
     const name = String(body?.name || "");
