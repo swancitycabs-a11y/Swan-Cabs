@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Autocomplete,
@@ -295,6 +296,7 @@ export default function BookingForm() {
   const [pickupPlaceId, setPickupPlaceId] = useState("");
   const [dropoffPlaceId, setDropoffPlaceId] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [bookingId, setBookingId] = useState("");
   const [showReview, setShowReview] = useState(false);
   const [handCarryBags, setHandCarryBags] = useState("");
   const [checkInBags, setCheckInBags] = useState("");
@@ -709,6 +711,10 @@ const showReturnFlightNumber = returnTrip === "Yes" && showFlightNumber;
           });
 
           const data = await res.json().catch(() => ({}));
+
+          console.log("BOOKING RESPONSE:", data); // debug
+
+           setBookingId(data.bookingId || "SC-ERROR"); // ✅ IMPORTANT
           if (!res.ok || !data?.ok) throw new Error(data?.error || "Fare failed");
 
           setServerEstimate(Number(data.estimatedFare));
@@ -1035,8 +1041,8 @@ if (typeof window !== "undefined" && (window as any).gtag) {
   });
 }
 
+setBookingId(data.bookingId);
 setShowConfirmation(true);
-
       localStorage.setItem(
   "blockedPhoneUntil",
   (Date.now() + 5 * 60 * 1000).toString()
@@ -2181,13 +2187,27 @@ setDropoff(fullAddress);
           }}
         >
           <h1 style={{ color: "#16a34a", marginBottom: 10 }}>
-            Booking Confirmed
-          </h1>
+  Booking Confirmed
+</h1>
 
-          <p style={{ color: "#444", marginBottom: 20 }}>
-            Your booking has been successfully created.
-            We’ve sent confirmation details to your phone.
-          </p>
+{/* ✅ ADD HERE */}
+<div
+  style={{
+    background: "#facc15",
+    padding: "12px",
+    borderRadius: "10px",
+    fontWeight: "bold",
+    marginBottom: 15,
+    textAlign: "center"
+  }}
+>
+  Booking ID: {bookingId || "Loading..."}
+</div>
+
+<p style={{ color: "#444", marginBottom: 20 }}>
+  Your booking has been successfully created.
+  We’ve sent confirmation details to your phone.
+</p>
 
           <div style={{ fontSize: 28, marginBottom: 24 }}>
             📩 ➜ 📱 ✅
