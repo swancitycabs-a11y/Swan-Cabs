@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req) {
+export async function POST(req: NextRequest) {
   try {
     const { bookingId } = await req.json();
 
@@ -19,6 +19,7 @@ export async function POST(req) {
       booking: data,
     });
   } catch (err) {
+    console.error(err); // optional debug
     return NextResponse.json({ ok: false });
   }
 }
