@@ -9,21 +9,32 @@ export default function ManageBooking() {
 
   // 🔍 SEARCH BOOKING
   async function searchBooking() {
-    const res = await fetch("/api/get-booking", {
-      method: "POST",
-      body: JSON.stringify({ bookingId }),
-    });
+    try {
+      const res = await fetch("/api/get-booking", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", // ✅ important
+        },
+        body: JSON.stringify({ bookingId }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!data.booking || !data.booking.bookingId) {
-      setMsg("❌ Booking not found");
-      setBooking(null);
-      return;
+      console.log("API DATA:", data); // 🔍 debug
+
+      // ✅ FIXED CONDITION
+      if (!data || !data.booking) {
+        setMsg("❌ Booking not found");
+        setBooking(null);
+        return;
+      }
+
+      setBooking(data.booking);
+      setMsg("");
+    } catch (err) {
+      console.error(err);
+      setMsg("❌ Something went wrong");
     }
-
-    setBooking(data.booking);
-    setMsg("");
   }
 
   return (
@@ -50,22 +61,41 @@ export default function ManageBooking() {
           border: "none",
           borderRadius: 8,
           fontWeight: "bold",
+          cursor: "pointer",
         }}
       >
         Find Booking
       </button>
 
-      {msg && <p style={{ marginTop: 10 }}>{msg}</p>}
+      {msg && (
+        <p style={{ marginTop: 10, color: "red", fontWeight: "bold" }}>
+          {msg}
+        </p>
+      )}
 
       {booking && (
-        <div style={{ marginTop: 20 }}>
-          <h3>Booking Details</h3>
+        <div
+          style={{
+            marginTop: 20,
+            padding: 15,
+            borderRadius: 10,
+            background: "#111",
+            color: "#fff",
+          }}
+        >
+          <h3 style={{ marginBottom: 10 }}>Booking Details</h3>
 
           <p><b>ID:</b> {booking.bookingId}</p>
           <p><b>Name:</b> {booking.name}</p>
+          <p><b>Phone:</b> {booking.phone}</p>
           <p><b>Pickup:</b> {booking.pickup}</p>
           <p><b>Dropoff:</b> {booking.dropoff}</p>
-          <p><b>Status:</b> {booking.status}</p>
+          <p><b>Car Type:</b> {booking.carType}</p>
+
+          {/* Optional: only show if exists */}
+          {booking.status && (
+            <p><b>Status:</b> {booking.status}</p>
+          )}
         </div>
       )}
     </div>
