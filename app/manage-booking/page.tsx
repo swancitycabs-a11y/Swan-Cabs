@@ -4,7 +4,7 @@ import { useState } from "react";
 
 export default function ManageBooking() {
   const [bookingId, setBookingId] = useState("");
-  const [booking, setBooking] = useState(null);
+  const [booking, setBooking] = useState<any>(null);
   const [msg, setMsg] = useState("");
 
   // 🔍 SEARCH BOOKING
