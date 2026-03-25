@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      booking: data,
+      booking: data.booking, // ✅ FIX HERE
     });
   } catch (err) {
     console.error(err); // optional debug
