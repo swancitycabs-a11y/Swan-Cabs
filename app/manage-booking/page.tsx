@@ -6,77 +6,59 @@ export default function ManageBooking() {
   const [bookingId, setBookingId] = useState("");
   const [booking, setBooking] = useState<any>(null);
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(false);
 
-  // 🔍 SEARCH BOOKING
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    pickup: "",
+    dropoff: "",
+  });
+
+  // 🔍 SEARCH
   async function searchBooking() {
-    try {
-      const res = await fetch("/api/get-booking", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ bookingId }),
-      });
+    const res = await fetch("/api/get-booking", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ bookingId }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      console.log("API DATA:", data);
-
-      if (!data || !data.booking) {
-        setMsg("❌ Booking not found");
-        setBooking(null);
-        return;
-      }
-
-      setBooking(data.booking);
-      setMsg("");
-    } catch (err) {
-      console.error(err);
-      setMsg("❌ Something went wrong");
+    if (!data?.booking) {
+      setMsg("❌ Booking not found");
+      setBooking(null);
+      return;
     }
+
+    setBooking(data.booking);
+    setForm(data.booking);
+    setEditing(false);
+    setMsg("");
   }
 
-  // ❌ CANCEL BOOKING
-  async function cancelBooking() {
-    try {
-      const res = await fetch("/api/cancel-booking", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ bookingId }),
-      });
-
-      const data = await res.json();
-
-      if (data.ok) {
-        setMsg("✅ Booking cancelled");
-        setBooking(null);
-      }
-    } catch (err) {
-      console.error(err);
-      setMsg("❌ Cancel failed");
-    }
-  }
-
-  // ✏️ UPDATE BOOKING
+  // ✏️ UPDATE
   async function updateBooking() {
-    try {
-      const res = await fetch("/api/update-booking", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(booking),
-      });
+    const res = await fetch("/api/update-booking", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        bookingId,
+        ...form,
+      }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (data.ok) {
-        setMsg("✅ Booking updated");
-      }
-    } catch (err) {
-      console.error(err);
+    if (data.ok) {
+      setMsg("✅ Booking updated");
+      setEditing(false);
+      searchBooking();
+    } else {
       setMsg("❌ Update failed");
     }
   }
@@ -92,134 +74,36 @@ export default function ManageBooking() {
         style={{ width: "100%", padding: 10, marginBottom: 10 }}
       />
 
-      <button
-        onClick={searchBooking}
-        style={{
-          width: "100%",
-          padding: 10,
-          background: "#facc15",
-          border: "none",
-          borderRadius: 8,
-          fontWeight: "bold",
-          cursor: "pointer",
-        }}
-      >
+      <button onClick={searchBooking} style={{ width: "100%", padding: 10 }}>
         Find Booking
       </button>
 
-      {msg && (
-        <p style={{ marginTop: 10, color: "red", fontWeight: "bold" }}>
-          {msg}
-        </p>
-      )}
+      {msg && <p style={{ color: "red" }}>{msg}</p>}
 
       {booking && (
-        <div
-          style={{
-            marginTop: 20,
-            padding: 15,
-            borderRadius: 10,
-            background: "#111",
-            color: "#fff",
-          }}
-        >
-          <h3 style={{ marginBottom: 10 }}>Booking Details</h3>
+        <div style={{ marginTop: 20, background: "#111", color: "#fff", padding: 15 }}>
+          <h3>Booking Details</h3>
 
-          {/* ✏️ Editable fields */}
-          <p><b>ID:</b> {booking.bookingId}</p>
+          {editing ? (
+            <>
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <input value={form.pickup} onChange={(e) => setForm({ ...form, pickup: e.target.value })} />
+              <input value={form.dropoff} onChange={(e) => setForm({ ...form, dropoff: e.target.value })} />
 
-          <p>
-            <b>Name:</b>
-            <input
-              value={booking.name}
-              onChange={(e) =>
-                setBooking({ ...booking, name: e.target.value })
-              }
-              style={{ width: "100%", marginTop: 5 }}
-            />
-          </p>
+              <button onClick={updateBooking}>💾 Save</button>
+            </>
+          ) : (
+            <>
+              <p><b>ID:</b> {booking.bookingId}</p>
+              <p><b>Name:</b> {booking.name}</p>
+              <p><b>Phone:</b> {booking.phone}</p>
+              <p><b>Pickup:</b> {booking.pickup}</p>
+              <p><b>Dropoff:</b> {booking.dropoff}</p>
 
-          <p>
-            <b>Phone:</b>
-            <input
-              value={booking.phone}
-              onChange={(e) =>
-                setBooking({ ...booking, phone: e.target.value })
-              }
-              style={{ width: "100%", marginTop: 5 }}
-            />
-          </p>
-
-          <p>
-            <b>Pickup:</b>
-            <input
-              value={booking.pickup}
-              onChange={(e) =>
-                setBooking({ ...booking, pickup: e.target.value })
-              }
-              style={{ width: "100%", marginTop: 5 }}
-            />
-          </p>
-
-          <p>
-            <b>Dropoff:</b>
-            <input
-              value={booking.dropoff}
-              onChange={(e) =>
-                setBooking({ ...booking, dropoff: e.target.value })
-              }
-              style={{ width: "100%", marginTop: 5 }}
-            />
-          </p>
-
-          <p>
-            <b>Car Type:</b>
-            <input
-              value={booking.carType}
-              onChange={(e) =>
-                setBooking({ ...booking, carType: e.target.value })
-              }
-              style={{ width: "100%", marginTop: 5 }}
-            />
-          </p>
-
-          {booking.status && (
-            <p><b>Status:</b> {booking.status}</p>
+              <button onClick={() => setEditing(true)}>✏️ Edit</button>
+            </>
           )}
-
-          {/* 🔥 ACTION BUTTONS */}
-          <div style={{ marginTop: 15 }}>
-            <button
-              onClick={updateBooking}
-              style={{
-                padding: 10,
-                background: "#22c55e",
-                border: "none",
-                borderRadius: 6,
-                color: "#fff",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              ✏️ Update
-            </button>
-
-            <button
-              onClick={cancelBooking}
-              style={{
-                padding: 10,
-                marginLeft: 10,
-                background: "#ef4444",
-                border: "none",
-                borderRadius: 6,
-                color: "#fff",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              ❌ Cancel
-            </button>
-          </div>
         </div>
       )}
     </div>
