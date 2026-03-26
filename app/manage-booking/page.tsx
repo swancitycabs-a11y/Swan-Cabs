@@ -51,7 +51,11 @@ export default function ManageBooking() {
 
       if (data.ok) {
         setMsg("✅ Booking cancelled");
-        setBooking(null);
+
+        // 🔥 refresh instead of clearing
+        await searchBooking();
+      } else {
+        setMsg("❌ Cancel failed");
       }
     } catch (err) {
       console.error(err);
@@ -67,19 +71,31 @@ export default function ManageBooking() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(booking),
+        // 🔥 always send bookingId
+        body: JSON.stringify({
+          bookingId,
+          ...booking,
+        }),
       });
 
       const data = await res.json();
 
       if (data.ok) {
         setMsg("✅ Booking updated");
+
+        // 🔥 refresh data
+        await searchBooking();
+      } else {
+        setMsg("❌ Update failed");
       }
     } catch (err) {
       console.error(err);
       setMsg("❌ Update failed");
     }
   }
+
+  const isCancelled =
+    booking?.status?.toLowerCase?.() === "cancelled";
 
   return (
     <div style={{ padding: 20, maxWidth: 500, margin: "auto" }}>
@@ -125,12 +141,13 @@ export default function ManageBooking() {
         >
           <h3 style={{ marginBottom: 10 }}>Booking Details</h3>
 
-          {/* ✏️ Editable fields */}
           <p><b>ID:</b> {booking.bookingId}</p>
 
+          {/* ✏️ Editable fields */}
           <p>
             <b>Name:</b>
             <input
+              disabled={isCancelled}
               value={booking.name}
               onChange={(e) =>
                 setBooking({ ...booking, name: e.target.value })
@@ -142,6 +159,7 @@ export default function ManageBooking() {
           <p>
             <b>Phone:</b>
             <input
+              disabled={isCancelled}
               value={booking.phone}
               onChange={(e) =>
                 setBooking({ ...booking, phone: e.target.value })
@@ -153,6 +171,7 @@ export default function ManageBooking() {
           <p>
             <b>Pickup:</b>
             <input
+              disabled={isCancelled}
               value={booking.pickup}
               onChange={(e) =>
                 setBooking({ ...booking, pickup: e.target.value })
@@ -164,6 +183,7 @@ export default function ManageBooking() {
           <p>
             <b>Dropoff:</b>
             <input
+              disabled={isCancelled}
               value={booking.dropoff}
               onChange={(e) =>
                 setBooking({ ...booking, dropoff: e.target.value })
@@ -175,6 +195,7 @@ export default function ManageBooking() {
           <p>
             <b>Car Type:</b>
             <input
+              disabled={isCancelled}
               value={booking.carType}
               onChange={(e) =>
                 setBooking({ ...booking, carType: e.target.value })
@@ -184,21 +205,27 @@ export default function ManageBooking() {
           </p>
 
           {booking.status && (
-            <p><b>Status:</b> {booking.status}</p>
+            <p>
+              <b>Status:</b>{" "}
+              <span style={{ color: isCancelled ? "red" : "#22c55e" }}>
+                {booking.status}
+              </span>
+            </p>
           )}
 
           {/* 🔥 ACTION BUTTONS */}
           <div style={{ marginTop: 15 }}>
             <button
               onClick={updateBooking}
+              disabled={isCancelled}
               style={{
                 padding: 10,
-                background: "#22c55e",
+                background: isCancelled ? "#555" : "#22c55e",
                 border: "none",
                 borderRadius: 6,
                 color: "#fff",
                 fontWeight: "bold",
-                cursor: "pointer",
+                cursor: isCancelled ? "not-allowed" : "pointer",
               }}
             >
               ✏️ Update
@@ -206,15 +233,16 @@ export default function ManageBooking() {
 
             <button
               onClick={cancelBooking}
+              disabled={isCancelled}
               style={{
                 padding: 10,
                 marginLeft: 10,
-                background: "#ef4444",
+                background: isCancelled ? "#555" : "#ef4444",
                 border: "none",
                 borderRadius: 6,
                 color: "#fff",
                 fontWeight: "bold",
-                cursor: "pointer",
+                cursor: isCancelled ? "not-allowed" : "pointer",
               }}
             >
               ❌ Cancel
