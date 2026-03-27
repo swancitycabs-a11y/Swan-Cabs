@@ -37,21 +37,27 @@ export default function Header() {
       <div className="container headerInner">
         {/* Brand */}
         <Link href="/" className="brandBlock" onClick={() => setMenuOpen(false)}>
-  <div className="brandName">Swan Cabs</div>
-  <div className="brandTag">Available 24/7</div>
-</Link>
+          <div className="brandName">Swan Cabs</div>
+          <div className="brandTag">Available 24/7</div>
+        </Link>
 
+        {/* ACTION BUTTONS (NEW) */}
+        <div className="headerActions">
+          {/* Call Now */}
+          <a
+            className="headerPhone callNowBtn"
+            href={`tel:${phoneTel}`}
+          >
+            📞 Call Now
+          </a>
 
-        {/* Phone */}
-        <a
-  className="headerPhone callNowBtn"
-  href={`tel:${phoneTel}`}
->
-  📞 Call Now
-</a>
+          {/* Manage Booking */}
+          <Link href="/manage-booking" className="manageBtn">
+            📋 Manage
+          </Link>
+        </div>
 
-
-        {/* Burger (mobile only via CSS) */}
+        {/* Burger */}
         <button
           type="button"
           className="hamburger"
@@ -77,6 +83,7 @@ export default function Header() {
           <nav className="mobileMenu">
             <Link href="/" onClick={() => setMenuOpen(false)}>Home</Link>
             <Link href="/book" onClick={() => setMenuOpen(false)}>Book Taxi</Link>
+            <Link href="/manage-booking" onClick={() => setMenuOpen(false)}>Manage Booking</Link>
             <Link href="/#services" onClick={() => setMenuOpen(false)}>Services</Link>
             <Link href="/#contact" onClick={() => setMenuOpen(false)}>Contact</Link>
           </nav>
@@ -85,4 +92,3 @@ export default function Header() {
     </header>
   );
 }
-
