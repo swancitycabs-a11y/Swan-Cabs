@@ -52,9 +52,9 @@ export default function Header() {
           </a>
 
           {/* Manage Booking */}
-          <Link href="/manage-booking" className="manageBtn">
-            📋 Manage
-          </Link>
+          <Link href="/manage-booking" className="headerPhone callNowBtn">
+  📋 Manage
+</Link>
         </div>
 
         {/* Burger */}
