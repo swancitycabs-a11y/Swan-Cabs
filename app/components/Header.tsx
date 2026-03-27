@@ -54,7 +54,7 @@ export default function Header() {
           {/* Manage Booking */}
          <Link href="/manage-booking" className="headerPhone callNowBtn manageStack">
   <span className="manageTop">📋 Manage</span>
-  <span className="manageBottom">Booking</span>
+  <span className="manageBottom">  Booking</span>
 </Link>
         </div>
 
