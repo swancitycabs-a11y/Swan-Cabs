@@ -845,3 +845,22 @@ a { color: inherit; text-decoration: none; }
 .manageBtn:hover {
   background: #eab308;
 }
+
+
+.manageStack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+  padding: 6px 14px; /* adjust height */
+}
+
+.manageTop {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.manageBottom {
+  font-size: 12px;
+  opacity: 0.8;
+}
