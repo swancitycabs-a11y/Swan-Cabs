@@ -283,7 +283,7 @@ function calcFare(params: {
 
 type StopItem = { address: string; placeId: string };
 
-export default function BookingForm() {
+export default function BookingForm({ isEdit = false, initialData = null }) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
   const { isLoaded, loadError } = useJsApiLoader({
