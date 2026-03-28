@@ -10,7 +10,7 @@ export default function ManageBooking() {
   const [showOptions, setShowOptions] = useState(false);
   const [view, setView] = useState<"track" | "edit" | null>(null);
 
-  // 🚗 TRACKING STATES
+  // 🚕 TRACKING STATES
   const [etaMinutes, setEtaMinutes] = useState<number | null>(12);
   const [carProgress, setCarProgress] = useState(0);
 
@@ -19,9 +19,7 @@ export default function ManageBooking() {
     try {
       const res = await fetch("/api/get-booking", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingId }),
       });
 
@@ -49,9 +47,7 @@ export default function ManageBooking() {
     try {
       const res = await fetch("/api/cancel-booking", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingId }),
       });
 
@@ -72,7 +68,7 @@ export default function ManageBooking() {
   const isCancelled =
     booking?.status?.toLowerCase?.() === "cancelled";
 
-  // 🚗 ETA LOGIC (NOW vs LATER)
+  // 🚕 ETA LOGIC (NOW vs LATER)
   useEffect(() => {
     if (!booking) return;
 
@@ -98,7 +94,7 @@ export default function ManageBooking() {
     }
   }, [booking]);
 
-  // 🚗 COUNTDOWN + ANIMATION
+  // 🚕 COUNTDOWN + SMOOTH ANIMATION
   useEffect(() => {
     if (etaMinutes === null || etaMinutes <= 0) return;
 
@@ -115,13 +111,32 @@ export default function ManageBooking() {
         const step = 100 / 12;
         return Math.min(100, prev + step);
       });
-    }, 6000); // ⚡ change to 60000 for real use
+    }, 1000); // ⚡ change to 60000 for real time
 
     return () => clearInterval(interval);
   }, [etaMinutes]);
 
   return (
     <div style={{ padding: 20, maxWidth: 800, margin: "auto" }}>
+      {/* 🎨 PREMIUM ANIMATIONS */}
+      <style jsx>{`
+        @keyframes roadMove {
+          from { transform: translateX(0) translateY(-50%); }
+          to { transform: translateX(-50%) translateY(-50%); }
+        }
+
+        @keyframes carBounce {
+          0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+          50% { transform: translate(-50%, -50%) translateY(-3px); }
+        }
+
+        @keyframes pulse {
+          0% { transform: translateY(-50%) scale(1); opacity: 1; }
+          50% { transform: translateY(-50%) scale(1.2); opacity: 0.7; }
+          100% { transform: translateY(-50%) scale(1); opacity: 1; }
+        }
+      `}</style>
+
       <h1>Manage Booking</h1>
 
       {/* SEARCH */}
@@ -141,7 +156,6 @@ export default function ManageBooking() {
           border: "none",
           borderRadius: 10,
           fontWeight: "bold",
-          cursor: "pointer",
         }}
       >
         Find Booking
@@ -158,28 +172,14 @@ export default function ManageBooking() {
         <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
           <button
             onClick={() => setView("track")}
-            style={{
-              flex: 1,
-              padding: 12,
-              background: "#3b82f6",
-              color: "#fff",
-              border: "none",
-              borderRadius: 10,
-            }}
+            style={{ flex: 1, padding: 12, background: "#3b82f6", color: "#fff", borderRadius: 10 }}
           >
-            🚗 Track
+            🚕 Track
           </button>
 
           <button
             onClick={() => setView("edit")}
-            style={{
-              flex: 1,
-              padding: 12,
-              background: "#22c55e",
-              color: "#fff",
-              border: "none",
-              borderRadius: 10,
-            }}
+            style={{ flex: 1, padding: 12, background: "#22c55e", color: "#fff", borderRadius: 10 }}
           >
             ✏️ Update
           </button>
@@ -192,7 +192,6 @@ export default function ManageBooking() {
               padding: 12,
               background: isCancelled ? "#555" : "#ef4444",
               color: "#fff",
-              border: "none",
               borderRadius: 10,
             }}
           >
@@ -201,10 +200,10 @@ export default function ManageBooking() {
         </div>
       )}
 
-      {/* 🚗 TRACK VIEW */}
+      {/* 🚕 TRACK VIEW */}
       {view === "track" && booking && (
         <div style={{ marginTop: 30 }}>
-          <h3>🚗 Taxi is on the way</h3>
+          <h3>🚕 Taxi is on the way</h3>
 
           <p>📍 <b>Pickup:</b> {booking.pickup}</p>
 
@@ -214,14 +213,15 @@ export default function ManageBooking() {
             <h2>⏱ Arriving in {etaMinutes} minutes</h2>
           )}
 
-          {/* ANIMATION */}
+          {/* 🚕 PREMIUM TRACK */}
           <div
             style={{
               position: "relative",
-              height: 60,
+              height: 80,
               marginTop: 30,
-              background: "#1f2937",
-              borderRadius: 30,
+              background: "#111827",
+              borderRadius: 40,
+              overflow: "hidden",
             }}
           >
             {/* ROAD */}
@@ -230,36 +230,17 @@ export default function ManageBooking() {
                 position: "absolute",
                 top: "50%",
                 left: 0,
-                width: "100%",
+                width: "200%",
                 height: 4,
-                background: "#555",
+                background:
+                  "repeating-linear-gradient(90deg, #555 0 20px, transparent 20px 40px)",
                 transform: "translateY(-50%)",
+                animation: "roadMove 1s linear infinite",
               }}
             />
 
-            {/* CAR */}
-            <div
-              style={{
-                position: "absolute",
-                left: `${carProgress}%`,
-                top: "50%",
-                transform: "translate(-50%, -50%)",
-                fontSize: 28,
-                transition: "left 1s linear",
-              }}
-            >
-              🚗
-            </div>
-
             {/* START */}
-            <div
-              style={{
-                position: "absolute",
-                left: 10,
-                top: "50%",
-                transform: "translateY(-50%)",
-              }}
-            >
+            <div style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}>
               🟢
             </div>
 
@@ -270,15 +251,31 @@ export default function ManageBooking() {
                 right: 10,
                 top: "50%",
                 transform: "translateY(-50%)",
+                animation: "pulse 1.5s infinite",
               }}
             >
               📍
+            </div>
+
+            {/* TAXI */}
+            <div
+              style={{
+                position: "absolute",
+                left: `${carProgress}%`,
+                top: "50%",
+                transform: "translate(-50%, -50%)",
+                fontSize: 36,
+                transition: "left 0.8s ease-in-out",
+                animation: "carBounce 0.6s infinite",
+              }}
+            >
+              🚕
             </div>
           </div>
         </div>
       )}
 
-      {/* ✏️ UPDATE VIEW */}
+      {/* UPDATE VIEW */}
       {view === "edit" && booking && (
         <div style={{ marginTop: 30 }}>
           <BookingForm isEdit={true} initialData={booking} />
