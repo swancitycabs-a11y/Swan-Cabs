@@ -99,8 +99,8 @@ useEffect(() => {
       travelMode: window.google.maps.TravelMode.DRIVING,
     },
     (result, status) => {
-      if (status === "OK") {
-        setDirections(result);
+      if (status === "OK" && result) {
+         setDirections(result);
 
         const path = result.routes[0].overview_path;
         setRoutePath(path);
