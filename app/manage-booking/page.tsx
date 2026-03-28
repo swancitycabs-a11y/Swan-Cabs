@@ -115,7 +115,7 @@ export default function ManageBooking() {
         const step = 100 / 12;
         return Math.min(100, prev + step);
       });
-    }, 1000); // ⚡ change to 60000 for real use
+    }, 6000); // ⚡ change to 60000 for real use
 
     return () => clearInterval(interval);
   }, [etaMinutes]);
