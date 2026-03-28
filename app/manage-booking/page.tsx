@@ -229,7 +229,6 @@ useEffect(() => {
     </GoogleMap>
   </div>
 </div>
-        </div>
 )}
       {/* ✏️ UPDATE VIEW */}
       {view === "edit" && booking && (
