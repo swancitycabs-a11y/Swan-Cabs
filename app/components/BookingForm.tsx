@@ -397,6 +397,21 @@ useEffect(() => {
   const [returnFlightNumber, setReturnFlightNumber] = useState("");
 
   const [specialRequest, setSpecialRequest] = useState("");
+
+  useEffect(() => {
+  if (isEdit && initialData) {
+    setPickup(initialData.pickup || "");
+    setDropoff(initialData.dropoff || "");
+    setCarType(initialData.carType || "Sedan 4 Pax");
+    setPassengers(Number(initialData.passengers || 1));
+
+    setName(initialData.name || "");
+    setPhone(initialData.phone || "");
+    setEmail(initialData.email || "");
+
+    setSpecialRequest(initialData.specialRequest || "");
+  }
+}, [isEdit, initialData]);
   
 
 
@@ -840,10 +855,54 @@ setOtpBlock5Min();
 }
 
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  // ✅ ADD HERE 👇 (BEFORE onSubmit)
+
+async function updateBooking() {
+  try {
     setLoading(true);
     setMsg(null);
+
+    const res = await fetch("/api/update-booking", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        bookingId: initialData.bookingId,
+
+        pickup,
+        dropoff,
+        carType,
+        passengers,
+        name,
+        phone,
+        email,
+        specialRequest,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!data.ok) throw new Error(data.error || "Update failed");
+
+    setMsg("✅ Booking updated successfully");
+  } catch (err: any) {
+    setMsg("❌ Update failed");
+  } finally {
+    setLoading(false);
+  }
+}
+
+ async function onSubmit(e: React.FormEvent) {
+  e.preventDefault();
+
+  // ✅ ADD THIS HERE 👇
+  if (isEdit) {
+    return updateBooking();
+  }
+
+  setLoading(true);
+  setMsg(null);
 
     if (!phoneVerified) {
   setLoading(false);
@@ -1773,7 +1832,7 @@ setDropoff(fullAddress);
                 </div>
 
                 {/* ✅ OTP section */}
-{!phoneVerified && (
+{!isEdit && !phoneVerified && (
   <div className="card" style={{ padding: 10, display: "grid", gap: 8 }}>
     {/* ✅ SHOW ERROR EVEN WHEN OTP NOT SENT */}
     {otpError && (
@@ -1872,7 +1931,7 @@ setDropoff(fullAddress);
   </div>
 )}
 {/* ✅ STEP 4 GOES EXACTLY HERE */}
-{phoneVerified && (
+{!isEdit && phoneVerified && (
   <div
     className="small"
     style={{
@@ -2017,8 +2076,12 @@ setDropoff(fullAddress);
                 />
 
               <button className="btn primary" type="submit" disabled={loading}>
-                  {loading ? "Sending…" : "🚕 Request Booking"}
-                </button>
+  {loading
+    ? "Sending…"
+    : isEdit
+    ? "✏️ Update Booking"
+    : "🚕 Request Booking"}
+</button>
 
                 {msg && <div className="small">{msg}</div>}
               </form>
