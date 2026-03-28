@@ -100,17 +100,22 @@ useEffect(() => {
     },
     (result, status) => {
       if (status === "OK" && result) {
-         setDirections(result);
+  setDirections(result);
 
-        const path = result.routes[0].overview_path;
-        setRoutePath(path);
-        setCarPosition(path[0]);
+  const route = result.routes[0];
+  const path = route.overview_path;
 
-        const duration =
-          result.routes[0].legs[0].duration.value / 60;
+  setRoutePath(path);
+  setCarPosition(path[0]);
 
-        setEtaMinutes(Math.round(duration));
-      }
+  const leg = route?.legs?.[0];
+
+  if (!leg || !leg.duration) return;
+
+  const duration = leg.duration.value / 60;
+
+  setEtaMinutes(Math.round(duration));
+}
     }
   );
 }, [booking]);
