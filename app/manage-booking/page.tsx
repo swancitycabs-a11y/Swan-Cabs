@@ -85,6 +85,68 @@ const [mapCenter, setMapCenter] = useState({
   const isCancelled =
   booking?.status?.toLowerCase?.() === "cancelled";
 
+  const isCancelled =
+  booking?.status?.toLowerCase?.() === "cancelled";
+
+
+// ✅ STEP 4 (route calculation)
+useEffect(() => {
+  if (!booking || !window.google) return;
+
+  const service = new window.google.maps.DirectionsService();
+
+  service.route(
+    {
+      origin: booking.pickup,
+      destination: booking.dropoff,
+      travelMode: window.google.maps.TravelMode.DRIVING,
+    },
+    (result, status) => {
+      if (status === "OK" && result) {
+        setDirections(result);
+
+        const route = result.routes[0];
+        const path = route.overview_path;
+
+        setRoutePath(path);
+        setCarPosition(path[0]);
+
+        const leg = route?.legs?.[0];
+        if (!leg || !leg.duration) return;
+
+        const duration = leg.duration.value / 60;
+        setEtaMinutes(Math.round(duration));
+      }
+    }
+  );
+}, [booking]);
+
+
+// ✅ ADD YOUR NEW LOGIC EXACTLY HERE 👇
+useEffect(() => {
+  if (!booking) return;
+
+  if (booking.bookingWhen === "now") {
+    setEtaMinutes(12);
+    return;
+  }
+
+  if (booking.bookingWhen === "later") {
+    const pickupTime = new Date(`${booking.date}T${booking.time}`);
+    const now = new Date();
+
+    const diffMinutes =
+      (pickupTime.getTime() - now.getTime()) / 60000;
+
+    if (diffMinutes <= 15) {
+      setEtaMinutes(15);
+    } else {
+      setEtaMinutes(null);
+    }
+  }
+}, [booking]);
+
+
 
 // ✅ STEP 4 GOES EXACTLY HERE 👇
 useEffect(() => {
