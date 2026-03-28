@@ -877,6 +877,11 @@ setOtpBlock5Min();
 
 async function updateBooking() {
   try {
+    if (!initialData?.bookingId) {
+      setMsg("❌ Booking ID missing");
+      return;
+    }
+
     setLoading(true);
     setMsg(null);
 
@@ -886,7 +891,7 @@ async function updateBooking() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        bookingId: initialData.bookingId,
+        bookingId: initialData?.bookingId,
 
         pickup,
         dropoff,
