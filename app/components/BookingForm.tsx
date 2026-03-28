@@ -282,8 +282,26 @@ function calcFare(params: {
 }
 
 type StopItem = { address: string; placeId: string };
+type BookingData = {
+  bookingId?: string;
+  pickup?: string;
+  dropoff?: string;
+  carType?: string;
+  passengers?: number;
+  name?: string;
+  phone?: string;
+  email?: string;
+  specialRequest?: string;
+  status?: string;
+};
 
-export default function BookingForm({ isEdit = false, initialData = null }) {
+export default function BookingForm({
+  isEdit = false,
+  initialData = null,
+}: {
+  isEdit?: boolean;
+  initialData?: BookingData | null;
+}) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
   const { isLoaded, loadError } = useJsApiLoader({
@@ -400,16 +418,16 @@ useEffect(() => {
 
   useEffect(() => {
   if (isEdit && initialData) {
-    setPickup(initialData.pickup || "");
-    setDropoff(initialData.dropoff || "");
-    setCarType(initialData.carType || "Sedan 4 Pax");
-    setPassengers(Number(initialData.passengers || 1));
+    setPickup(initialData?.pickup || "");
+    setDropoff(initialData?.dropoff || "");
+    setCarType(initialData?.carType || "Sedan 4 Pax");
+    setPassengers(Number(initialData?.passengers || 1));
 
-    setName(initialData.name || "");
-    setPhone(initialData.phone || "");
-    setEmail(initialData.email || "");
+    setName(initialData?.name || "");
+    setPhone(initialData?.phone || "");
+    setEmail(initialData?.email || "");
 
-    setSpecialRequest(initialData.specialRequest || "");
+    setSpecialRequest(initialData?.specialRequest || "");
   }
 }, [isEdit, initialData]);
   
