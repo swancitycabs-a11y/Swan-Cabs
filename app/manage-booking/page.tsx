@@ -1,9 +1,4 @@
 "use client";
-import {
-  GoogleMap,
-  DirectionsRenderer,
-  Marker,
-} from "@react-google-maps/api";
 
 import { useState, useEffect } from "react";
 import BookingForm from "../components/BookingForm";
@@ -14,16 +9,10 @@ export default function ManageBooking() {
   const [msg, setMsg] = useState("");
   const [showOptions, setShowOptions] = useState(false);
   const [view, setView] = useState<"track" | "edit" | null>(null);
-  const [etaMinutes, setEtaMinutes] = useState<number | null>(12);
-  const [carPosition, setCarPosition] = useState<any>(null);
-  const [routePath, setRoutePath] = useState<any[]>([]);
-  const [stepIndex, setStepIndex] = useState(0);
-  const [directions, setDirections] = useState<any>(null);
 
-const [mapCenter, setMapCenter] = useState({
-  lat: -31.9523,
-  lng: 115.8613,
-});
+  // 🚗 TRACKING STATES
+  const [etaMinutes, setEtaMinutes] = useState<number | null>(12);
+  const [carProgress, setCarProgress] = useState(0);
 
   // 🔍 SEARCH BOOKING
   async function searchBooking() {
@@ -38,8 +27,6 @@ const [mapCenter, setMapCenter] = useState({
 
       const data = await res.json();
 
-      console.log("API DATA:", data);
-
       if (!data || !data.booking) {
         setMsg("❌ Booking not found");
         setBooking(null);
@@ -49,8 +36,8 @@ const [mapCenter, setMapCenter] = useState({
 
       setBooking(data.booking);
       setMsg("");
-      setShowOptions(true); // ✅ SHOW BUTTONS
-      setView(null); // reset view
+      setShowOptions(true);
+      setView(null);
     } catch (err) {
       console.error(err);
       setMsg("❌ Something went wrong");
@@ -72,7 +59,7 @@ const [mapCenter, setMapCenter] = useState({
 
       if (data.ok) {
         setMsg("✅ Booking cancelled");
-        await searchBooking(); // refresh
+        await searchBooking();
       } else {
         setMsg("❌ Cancel failed");
       }
@@ -82,129 +69,56 @@ const [mapCenter, setMapCenter] = useState({
     }
   }
 
-  
-
   const isCancelled =
-  booking?.status?.toLowerCase?.() === "cancelled";
+    booking?.status?.toLowerCase?.() === "cancelled";
 
+  // 🚗 ETA LOGIC (NOW vs LATER)
+  useEffect(() => {
+    if (!booking) return;
 
-// ✅ STEP 4 (route calculation)
-useEffect(() => {
-  if (!booking || !window.google) return;
-
-  const service = new window.google.maps.DirectionsService();
-
-  service.route(
-    {
-      origin: booking.pickup,
-      destination: booking.dropoff,
-      travelMode: window.google.maps.TravelMode.DRIVING,
-    },
-    (result, status) => {
-      if (status === "OK" && result) {
-        setDirections(result);
-
-        const route = result.routes[0];
-        const path = route.overview_path;
-
-        setRoutePath(path);
-        setCarPosition(path[0]);
-
-        const leg = route?.legs?.[0];
-        if (!leg || !leg.duration) return;
-
-        const duration = leg.duration.value / 60;
-        setEtaMinutes(Math.round(duration));
-      }
+    if (booking.bookingWhen === "now") {
+      setEtaMinutes(12);
+      setCarProgress(0);
+      return;
     }
-  );
-}, [booking]);
-  // ✅ STEP 6 — CAR MOVEMENT (ADD HERE 👇)
-useEffect(() => {
-  if (!routePath.length) return;
 
-  const interval = setInterval(() => {
-    setStepIndex((prev) => {
-      const next = prev + 1;
+    if (booking.bookingWhen === "later") {
+      const pickupTime = new Date(`${booking.date}T${booking.time}`);
+      const now = new Date();
 
-      if (next < routePath.length) {
-        setCarPosition(routePath[next]);
+      const diffMinutes =
+        (pickupTime.getTime() - now.getTime()) / 60000;
 
-        setEtaMinutes((eta) =>
-          eta ? Math.max(1, eta - 1) : eta
-        );
-
-        return next;
+      if (diffMinutes <= 15) {
+        setEtaMinutes(15);
+        setCarProgress(0);
       } else {
-        clearInterval(interval);
-        return prev;
+        setEtaMinutes(null);
       }
-    });
-  }, 2000);
-
-  return () => clearInterval(interval);
-}, [routePath]);
-
-
-// ✅ ADD YOUR NEW LOGIC EXACTLY HERE 👇
-useEffect(() => {
-  if (!booking) return;
-
-  if (booking.bookingWhen === "now") {
-    setEtaMinutes(12);
-    return;
-  }
-
-  if (booking.bookingWhen === "later") {
-    const pickupTime = new Date(`${booking.date}T${booking.time}`);
-    const now = new Date();
-
-    const diffMinutes =
-      (pickupTime.getTime() - now.getTime()) / 60000;
-
-    if (diffMinutes <= 15) {
-      setEtaMinutes(15);
-    } else {
-      setEtaMinutes(null);
     }
-  }
-}, [booking]);
+  }, [booking]);
 
+  // 🚗 COUNTDOWN + ANIMATION
+  useEffect(() => {
+    if (etaMinutes === null || etaMinutes <= 0) return;
 
+    const interval = setInterval(() => {
+      setEtaMinutes((prev) => {
+        if (!prev || prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
 
-// ✅ STEP 4 GOES EXACTLY HERE 👇
-useEffect(() => {
-  if (!booking || !window.google) return;
+      setCarProgress((prev) => {
+        const step = 100 / 12;
+        return Math.min(100, prev + step);
+      });
+    }, 1000); // ⚡ change to 60000 for real use
 
-  const service = new window.google.maps.DirectionsService();
-
-  service.route(
-    {
-      origin: booking.pickup,
-      destination: booking.dropoff,
-      travelMode: window.google.maps.TravelMode.DRIVING,
-    },
-    (result, status) => {
-      if (status === "OK" && result) {
-  setDirections(result);
-
-  const route = result.routes[0];
-  const path = route.overview_path;
-
-  setRoutePath(path);
-  setCarPosition(path[0]);
-
-  const leg = route?.legs?.[0];
-
-  if (!leg || !leg.duration) return;
-
-  const duration = leg.duration.value / 60;
-
-  setEtaMinutes(Math.round(duration));
-}
-    }
-  );
-}, [booking]);
+    return () => clearInterval(interval);
+  }, [etaMinutes]);
 
   return (
     <div style={{ padding: 20, maxWidth: 800, margin: "auto" }}>
@@ -239,7 +153,7 @@ useEffect(() => {
         </p>
       )}
 
-      {/* ✅ OPTIONS BUTTONS */}
+      {/* OPTIONS */}
       {showOptions && booking && (
         <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
           <button
@@ -251,7 +165,6 @@ useEffect(() => {
               color: "#fff",
               border: "none",
               borderRadius: 10,
-              fontWeight: "bold",
             }}
           >
             🚗 Track
@@ -266,7 +179,6 @@ useEffect(() => {
               color: "#fff",
               border: "none",
               borderRadius: 10,
-              fontWeight: "bold",
             }}
           >
             ✏️ Update
@@ -282,8 +194,6 @@ useEffect(() => {
               color: "#fff",
               border: "none",
               borderRadius: 10,
-              fontWeight: "bold",
-              cursor: isCancelled ? "not-allowed" : "pointer",
             }}
           >
             ❌ Cancel
@@ -291,36 +201,83 @@ useEffect(() => {
         </div>
       )}
 
+      {/* 🚗 TRACK VIEW */}
       {view === "track" && booking && (
-  <div style={{ marginTop: 20 }}>
-  <h3>🚗 Driver is on the way...</h3>
+        <div style={{ marginTop: 30 }}>
+          <h3>🚗 Taxi is on the way</h3>
 
-  <p>📍 <b>Pickup:</b> {booking.pickup}</p>
-  <p>🏁 <b>Dropoff:</b> {booking.dropoff}</p>
+          <p>📍 <b>Pickup:</b> {booking.pickup}</p>
 
-  <p>⏱ ETA: {etaMinutes} minutes</p>
+          {etaMinutes === null ? (
+            <p>🕒 Driver will be assigned 15 minutes before pickup</p>
+          ) : (
+            <h2>⏱ Arriving in {etaMinutes} minutes</h2>
+          )}
 
-  <div style={{ height: 300, borderRadius: 12, overflow: "hidden" }}>
-    <GoogleMap
-      mapContainerStyle={{ width: "100%", height: "100%" }}
-      center={mapCenter}
-      zoom={13}
-    >
-      {directions && <DirectionsRenderer directions={directions} />}
+          {/* ANIMATION */}
+          <div
+            style={{
+              position: "relative",
+              height: 60,
+              marginTop: 30,
+              background: "#1f2937",
+              borderRadius: 30,
+            }}
+          >
+            {/* ROAD */}
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: 0,
+                width: "100%",
+                height: 4,
+                background: "#555",
+                transform: "translateY(-50%)",
+              }}
+            />
 
-      {carPosition && (
-        <Marker
-          position={carPosition}
-          icon={{
-            url: "https://maps.google.com/mapfiles/kml/shapes/cabs.png",
-            scaledSize: new window.google.maps.Size(40, 40),
-          }}
-        />
+            {/* CAR */}
+            <div
+              style={{
+                position: "absolute",
+                left: `${carProgress}%`,
+                top: "50%",
+                transform: "translate(-50%, -50%)",
+                fontSize: 28,
+                transition: "left 1s linear",
+              }}
+            >
+              🚗
+            </div>
+
+            {/* START */}
+            <div
+              style={{
+                position: "absolute",
+                left: 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+              }}
+            >
+              🟢
+            </div>
+
+            {/* DESTINATION */}
+            <div
+              style={{
+                position: "absolute",
+                right: 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+              }}
+            >
+              📍
+            </div>
+          </div>
+        </div>
       )}
-    </GoogleMap>
-  </div>
-</div>
-)}
+
       {/* ✏️ UPDATE VIEW */}
       {view === "edit" && booking && (
         <div style={{ marginTop: 30 }}>
