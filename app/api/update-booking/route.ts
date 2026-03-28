@@ -9,7 +9,10 @@ export async function POST(req: NextRequest) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(body), // ✅ send FULL data
+      body: JSON.stringify({
+        action: "updateBooking", // ⭐ CRITICAL FIX
+        ...body,
+   }),
     });
 
     // ⚠️ IMPORTANT: handle non-json safely
