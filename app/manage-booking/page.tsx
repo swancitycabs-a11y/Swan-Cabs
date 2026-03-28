@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import BookingForm from "../components/BookingForm"; // ✅ NEW
 
 export default function ManageBooking() {
   const [bookingId, setBookingId] = useState("");
@@ -51,9 +52,7 @@ export default function ManageBooking() {
 
       if (data.ok) {
         setMsg("✅ Booking cancelled");
-
-        // 🔥 refresh instead of clearing
-        await searchBooking();
+        await searchBooking(); // refresh
       } else {
         setMsg("❌ Cancel failed");
       }
@@ -63,44 +62,14 @@ export default function ManageBooking() {
     }
   }
 
-  // ✏️ UPDATE BOOKING
-  async function updateBooking() {
-    try {
-      const res = await fetch("/api/update-booking", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        // 🔥 always send bookingId
-        body: JSON.stringify({
-          bookingId,
-          ...booking,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.ok) {
-        setMsg("✅ Booking updated");
-
-        // 🔥 refresh data
-        await searchBooking();
-      } else {
-        setMsg("❌ Update failed");
-      }
-    } catch (err) {
-      console.error(err);
-      setMsg("❌ Update failed");
-    }
-  }
-
   const isCancelled =
     booking?.status?.toLowerCase?.() === "cancelled";
 
   return (
-    <div style={{ padding: 20, maxWidth: 500, margin: "auto" }}>
+    <div style={{ padding: 20, maxWidth: 800, margin: "auto" }}>
       <h1>Manage Booking</h1>
 
+      {/* SEARCH */}
       <input
         placeholder="Enter Booking ID"
         value={bookingId}
@@ -129,126 +98,41 @@ export default function ManageBooking() {
         </p>
       )}
 
+      {/* ✅ NEW: FULL BOOKING FORM */}
       {booking && (
-        <div
-          style={{
-            marginTop: 20,
-            padding: 15,
-            borderRadius: 10,
-            background: "#111",
-            color: "#fff",
-          }}
-        >
-          <h3 style={{ marginBottom: 10 }}>Booking Details</h3>
+        <>
+          <div style={{ marginTop: 30 }}>
+            <BookingForm isEdit={true} initialData={booking} />
+          </div>
 
-          <p><b>ID:</b> {booking.bookingId}</p>
-
-          {/* ✏️ Editable fields */}
-          <p>
-            <b>Name:</b>
-            <input
-              disabled={isCancelled}
-              value={booking.name}
-              onChange={(e) =>
-                setBooking({ ...booking, name: e.target.value })
-              }
-              style={{ width: "100%", marginTop: 5 }}
-            />
-          </p>
-
-          <p>
-            <b>Phone:</b>
-            <input
-              disabled={isCancelled}
-              value={booking.phone}
-              onChange={(e) =>
-                setBooking({ ...booking, phone: e.target.value })
-              }
-              style={{ width: "100%", marginTop: 5 }}
-            />
-          </p>
-
-          <p>
-            <b>Pickup:</b>
-            <input
-              disabled={isCancelled}
-              value={booking.pickup}
-              onChange={(e) =>
-                setBooking({ ...booking, pickup: e.target.value })
-              }
-              style={{ width: "100%", marginTop: 5 }}
-            />
-          </p>
-
-          <p>
-            <b>Dropoff:</b>
-            <input
-              disabled={isCancelled}
-              value={booking.dropoff}
-              onChange={(e) =>
-                setBooking({ ...booking, dropoff: e.target.value })
-              }
-              style={{ width: "100%", marginTop: 5 }}
-            />
-          </p>
-
-          <p>
-            <b>Car Type:</b>
-            <input
-              disabled={isCancelled}
-              value={booking.carType}
-              onChange={(e) =>
-                setBooking({ ...booking, carType: e.target.value })
-              }
-              style={{ width: "100%", marginTop: 5 }}
-            />
-          </p>
-
-          {booking.status && (
-            <p>
-              <b>Status:</b>{" "}
-              <span style={{ color: isCancelled ? "red" : "#22c55e" }}>
-                {booking.status}
-              </span>
-            </p>
-          )}
-
-          {/* 🔥 ACTION BUTTONS */}
-          <div style={{ marginTop: 15 }}>
-            <button
-              onClick={updateBooking}
-              disabled={isCancelled}
-              style={{
-                padding: 10,
-                background: isCancelled ? "#555" : "#22c55e",
-                border: "none",
-                borderRadius: 6,
-                color: "#fff",
-                fontWeight: "bold",
-                cursor: isCancelled ? "not-allowed" : "pointer",
-              }}
-            >
-              ✏️ Update
-            </button>
-
+          {/* ACTION BUTTONS */}
+          <div style={{ marginTop: 20, textAlign: "center" }}>
             <button
               onClick={cancelBooking}
               disabled={isCancelled}
               style={{
-                padding: 10,
-                marginLeft: 10,
+                padding: "12px 20px",
                 background: isCancelled ? "#555" : "#ef4444",
                 border: "none",
-                borderRadius: 6,
+                borderRadius: 8,
                 color: "#fff",
                 fontWeight: "bold",
                 cursor: isCancelled ? "not-allowed" : "pointer",
               }}
             >
-              ❌ Cancel
+              ❌ Cancel Booking
             </button>
+
+            {booking.status && (
+              <div style={{ marginTop: 10 }}>
+                <b>Status:</b>{" "}
+                <span style={{ color: isCancelled ? "red" : "#22c55e" }}>
+                  {booking.status}
+                </span>
+              </div>
+            )}
           </div>
-        </div>
+        </>
       )}
     </div>
   );
