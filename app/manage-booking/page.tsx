@@ -82,8 +82,7 @@ const [mapCenter, setMapCenter] = useState({
     }
   }
 
-  const isCancelled =
-  booking?.status?.toLowerCase?.() === "cancelled";
+  
 
   const isCancelled =
   booking?.status?.toLowerCase?.() === "cancelled";
@@ -120,6 +119,31 @@ useEffect(() => {
     }
   );
 }, [booking]);
+  // ✅ STEP 6 — CAR MOVEMENT (ADD HERE 👇)
+useEffect(() => {
+  if (!routePath.length) return;
+
+  const interval = setInterval(() => {
+    setStepIndex((prev) => {
+      const next = prev + 1;
+
+      if (next < routePath.length) {
+        setCarPosition(routePath[next]);
+
+        setEtaMinutes((eta) =>
+          eta ? Math.max(1, eta - 1) : eta
+        );
+
+        return next;
+      } else {
+        clearInterval(interval);
+        return prev;
+      }
+    });
+  }, 2000);
+
+  return () => clearInterval(interval);
+}, [routePath]);
 
 
 // ✅ ADD YOUR NEW LOGIC EXACTLY HERE 👇
