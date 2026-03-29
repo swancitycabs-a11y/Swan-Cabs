@@ -14,6 +14,7 @@ function ManageBookingPage() {
   const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
   const [carProgress, setCarProgress] = useState(100);
   const [targetTime, setTargetTime] = useState<number | null>(null);
+  const [isTrackingActive, setIsTrackingActive] = useState(false);
 
   const [liveStatus, setLiveStatus] = useState("searching");
 
@@ -62,6 +63,7 @@ function ManageBookingPage() {
       body: JSON.stringify({ bookingId }),
     });
 
+    // ✅ instant UI update
     setBooking((prev: any) => ({
       ...prev,
       status: "Cancelled",
@@ -71,13 +73,33 @@ function ManageBookingPage() {
   const isCancelled =
     booking?.status?.toLowerCase?.() === "cancelled";
 
+  // ✅ MAIN FIX: HANDLE ASAP + SCHEDULED
   useEffect(() => {
     if (!booking || isCancelled) return;
 
     let target: number | null = null;
 
+    // 🚕 ASAP
     if (booking.bookingWhen === "now") {
       target = Date.now() + 12 * 60 * 1000;
+      setIsTrackingActive(true);
+    }
+
+    // 📅 SCHEDULED
+    if (booking.bookingWhen === "later") {
+      const pickupTime = new Date(`${booking.date}T${booking.time}`).getTime();
+      const now = Date.now();
+
+      const diffMinutes = (pickupTime - now) / 60000;
+
+      if (diffMinutes <= 15) {
+        target = now + 15 * 60 * 1000;
+        setIsTrackingActive(true);
+      } else {
+        setIsTrackingActive(false);
+        setEtaMinutes(null);
+        return;
+      }
     }
 
     if (target !== null) {
@@ -89,7 +111,7 @@ function ManageBookingPage() {
   }, [booking]);
 
   useEffect(() => {
-    if (!targetTime || isCancelled) return;
+    if (!targetTime || isCancelled || !isTrackingActive) return;
 
     const interval = setInterval(() => {
       const diff = targetTime - Date.now();
@@ -115,7 +137,7 @@ function ManageBookingPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [targetTime]);
+  }, [targetTime, isTrackingActive]);
 
   useEffect(() => {
     const id = searchParams.get("bookingId");
@@ -185,14 +207,17 @@ function ManageBookingPage() {
         </div>
       )}
 
-      {view === "track" && booking && !isCancelled && (
+      {/* 🚕 TRACK ACTIVE */}
+      {view === "track" && booking && !isCancelled && isTrackingActive && (
         <div style={{ marginTop: 30 }}>
           <h2>🚕 Taxi is on the way to pickup</h2>
 
           <h2>
             {etaMinutes === 0
               ? "✅ Driver arrived"
-              : `⏱ Arriving in ${etaMinutes} minutes`}
+              : etaMinutes !== null
+              ? `⏱ Arriving in ${etaMinutes} minutes`
+              : "Calculating ETA..."}
           </h2>
 
           <div style={{ position: "relative", height: 70, marginTop: 20, background: "#111827", borderRadius: 40 }}>
@@ -210,6 +235,14 @@ function ManageBookingPage() {
               🚕💨
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ⏳ TOO EARLY */}
+      {view === "track" && booking && !isCancelled && !isTrackingActive && (
+        <div style={{ marginTop: 30 }}>
+          <h2>📅 Booking Scheduled</h2>
+          <p>Tracking will start 15 minutes before pickup time.</p>
         </div>
       )}
 
@@ -235,7 +268,6 @@ function ManageBookingPage() {
   );
 }
 
-// ✅ CORRECT EXPORT
 export default function Page() {
   return (
     <Suspense fallback={<div>Loading booking...</div>}>
@@ -243,4 +275,3 @@ export default function Page() {
     </Suspense>
   );
 }
-  
