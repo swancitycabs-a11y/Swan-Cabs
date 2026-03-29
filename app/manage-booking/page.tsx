@@ -11,7 +11,7 @@ function ManageBookingPage() {
   const [view, setView] = useState<"track" | null>(null);
   const searchParams = useSearchParams();
 
-  const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
+  const [etaTime, setEtaTime] = useState<string | null>(null);
   const [carProgress, setCarProgress] = useState(100);
   const [targetTime, setTargetTime] = useState<number | null>(null);
   const [isTrackingActive, setIsTrackingActive] = useState(false);
@@ -38,9 +38,7 @@ function ManageBookingPage() {
     try {
       const res = await fetch("/api/get-booking", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingId: id }),
       });
 
@@ -63,29 +61,39 @@ function ManageBookingPage() {
       body: JSON.stringify({ bookingId }),
     });
 
-    // ✅ instant UI update
+    // instant UI update
     setBooking((prev: any) => ({
       ...prev,
       status: "Cancelled",
     }));
+
+    localStorage.removeItem(`eta-${bookingId}`);
   }
 
   const isCancelled =
     booking?.status?.toLowerCase?.() === "cancelled";
 
-  // ✅ MAIN FIX: HANDLE ASAP + SCHEDULED
+  // 🚕 SETUP TIMER
   useEffect(() => {
     if (!booking || isCancelled) return;
 
     let target: number | null = null;
 
-    // 🚕 ASAP
+    // ASAP
     if (booking.bookingWhen === "now") {
-      target = Date.now() + 12 * 60 * 1000;
+      const stored = localStorage.getItem(`eta-${booking.bookingId}`);
+
+      if (stored) {
+        target = parseInt(stored);
+      } else {
+        target = Date.now() + 12 * 60 * 1000;
+        localStorage.setItem(`eta-${booking.bookingId}`, target.toString());
+      }
+
       setIsTrackingActive(true);
     }
 
-    // 📅 SCHEDULED
+    // SCHEDULED
     if (booking.bookingWhen === "later") {
       const pickupTime = new Date(`${booking.date}T${booking.time}`).getTime();
       const now = Date.now();
@@ -93,11 +101,11 @@ function ManageBookingPage() {
       const diffMinutes = (pickupTime - now) / 60000;
 
       if (diffMinutes <= 15) {
-        target = now + 15 * 60 * 1000;
+        target = pickupTime;
         setIsTrackingActive(true);
       } else {
         setIsTrackingActive(false);
-        setEtaMinutes(null);
+        setEtaTime(null);
         return;
       }
     }
@@ -110,6 +118,7 @@ function ManageBookingPage() {
     setLiveStatus("assigned");
   }, [booking]);
 
+  // ⏱ REAL TIMER WITH SECONDS
   useEffect(() => {
     if (!targetTime || isCancelled || !isTrackingActive) return;
 
@@ -117,15 +126,17 @@ function ManageBookingPage() {
       const diff = targetTime - Date.now();
 
       if (diff <= 0) {
-        setEtaMinutes(0);
+        setEtaTime("0:00");
         setCarProgress(0);
         setLiveStatus("arrived");
         clearInterval(interval);
         return;
       }
 
-      const minutes = Math.ceil(diff / 60000);
-      setEtaMinutes(minutes);
+      const minutes = Math.floor(diff / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+
+      setEtaTime(`${minutes}:${seconds.toString().padStart(2, "0")}`);
 
       setLiveStatus("arriving");
 
@@ -139,6 +150,7 @@ function ManageBookingPage() {
     return () => clearInterval(interval);
   }, [targetTime, isTrackingActive]);
 
+  // 🔗 AUTO LOAD FROM LINK
   useEffect(() => {
     const id = searchParams.get("bookingId");
 
@@ -207,20 +219,26 @@ function ManageBookingPage() {
         </div>
       )}
 
-      {/* 🚕 TRACK ACTIVE */}
+      {/* 🚕 TRACKING */}
       {view === "track" && booking && !isCancelled && isTrackingActive && (
         <div style={{ marginTop: 30 }}>
           <h2>🚕 Taxi is on the way to pickup</h2>
 
           <h2>
-            {etaMinutes === 0
+            {etaTime === "0:00"
               ? "✅ Driver arrived"
-              : etaMinutes !== null
-              ? `⏱ Arriving in ${etaMinutes} minutes`
+              : etaTime
+              ? `⏱ Arriving in ${etaTime}`
               : "Calculating ETA..."}
           </h2>
 
-          <div style={{ position: "relative", height: 70, marginTop: 20, background: "#111827", borderRadius: 40 }}>
+          <div style={{
+            position: "relative",
+            height: 70,
+            marginTop: 20,
+            background: "#111827",
+            borderRadius: 40
+          }}>
             <div style={{ position: "absolute", left: 10, top: 20 }}>📍</div>
             <div style={{ position: "absolute", right: 10, top: 20 }}>🟢</div>
 
@@ -238,7 +256,7 @@ function ManageBookingPage() {
         </div>
       )}
 
-      {/* ⏳ TOO EARLY */}
+      {/* ⏳ NOT STARTED */}
       {view === "track" && booking && !isCancelled && !isTrackingActive && (
         <div style={{ marginTop: 30 }}>
           <h2>📅 Booking Scheduled</h2>
@@ -246,12 +264,14 @@ function ManageBookingPage() {
         </div>
       )}
 
+      {/* ❌ CANCELLED */}
       {isCancelled && (
         <h1 style={{ color: "red", marginTop: 30, textAlign: "center" }}>
           ❌ BOOKING CANCELLED
         </h1>
       )}
 
+      {/* 📄 DETAILS */}
       {booking && (
         <div style={{ marginTop: 20 }}>
           <p><b>Status:</b> {booking.status}</p>
