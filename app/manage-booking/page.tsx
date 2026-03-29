@@ -10,8 +10,10 @@ export default function ManageBooking() {
   const [view, setView] = useState<"track" | null>(null);
 
   const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
-  const [carProgress, setCarProgress] = useState(100); // start from RIGHT
+  const [carProgress, setCarProgress] = useState(100);
   const [targetTime, setTargetTime] = useState<number | null>(null);
+
+  const [liveStatus, setLiveStatus] = useState("searching");
 
   // 🔍 SEARCH
   async function searchBooking() {
@@ -75,12 +77,20 @@ export default function ManageBooking() {
     }
 
     if (target !== null) {
-  setTargetTime(target);
-}
-    setCarProgress(100); // start from right
+      setTargetTime(target);
+    }
+
+    setCarProgress(100);
+    setLiveStatus("searching");
+
+    const timer = setTimeout(() => {
+      setLiveStatus("assigned");
+    }, 3000);
+
+    return () => clearTimeout(timer);
   }, [booking]);
 
-  // 🚕 REAL COUNTDOWN
+  // 🚕 REAL TIMER + STATUS FLOW
   useEffect(() => {
     if (!targetTime) return;
 
@@ -90,6 +100,7 @@ export default function ManageBooking() {
       if (diff <= 0) {
         setEtaMinutes(0);
         setCarProgress(0);
+        setLiveStatus("arrived");
         clearInterval(interval);
         return;
       }
@@ -97,10 +108,12 @@ export default function ManageBooking() {
       const minutes = Math.ceil(diff / 60000);
       setEtaMinutes(minutes);
 
+      setLiveStatus("arriving");
+
       const total = 12 * 60 * 1000;
       const done = total - diff;
 
-      const progress = 100 - (done / total) * 100; // RIGHT ➝ LEFT
+      const progress = 100 - (done / total) * 100;
       setCarProgress(Math.max(0, progress));
     }, 1000);
 
@@ -167,20 +180,36 @@ export default function ManageBooking() {
       {/* 🚕 TRACK VIEW */}
       {view === "track" && booking && !isCancelled && (
         <div style={{ marginTop: 30 }}>
-          {/* ETA FIRST */}
-          <h2>
-            {etaMinutes === 0
-              ? "🚕 Driver has arrived"
-              : `⏱ Arriving in ${etaMinutes} minutes`}
-          </h2>
+
+          {/* 🚀 UBER STATUS */}
+          <div style={{ marginBottom: 15 }}>
+            {liveStatus === "searching" && <h3>🔍 Searching driver...</h3>}
+            {liveStatus === "assigned" && <h3>👨‍✈️ Driver assigned</h3>}
+            {liveStatus === "arriving" && etaMinutes !== null && etaMinutes > 0 && (
+              <h2>🚕 Arriving in {etaMinutes} min</h2>
+            )}
+            {liveStatus === "arrived" && (
+              <h2 style={{ color: "#22c55e" }}>✅ Driver has arrived</h2>
+            )}
+          </div>
+
+          {/* STATUS BAR */}
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+            <span style={{ color: "#22c55e" }}>Searching</span>
+            <span style={{ color: ["assigned","arriving","arrived"].includes(liveStatus) ? "#22c55e" : "#fff" }}>Assigned</span>
+            <span style={{ color: ["arriving","arrived"].includes(liveStatus) ? "#22c55e" : "#fff" }}>Arriving</span>
+            <span style={{ color: liveStatus === "arrived" ? "#22c55e" : "#fff" }}>Arrived</span>
+          </div>
 
           {/* DETAILS */}
-          <p>👤 Name: {booking.name}</p>
-          <p>👤 Name: {booking.phone}</p>
-          <p>📍 Pickup: {booking.pickup}</p>
-          <p>🏁 Dropoff: {booking.dropoff}</p>
-          
-          {/* TRACK BAR */}
+          <div style={{ marginTop: 15 }}>
+            <p>👤 {booking.name}</p>
+            <p>📞 {booking.phone}</p>
+            <p>📍 {booking.pickup}</p>
+            <p>🏁 {booking.dropoff}</p>
+          </div>
+
+          {/* 🚕 MOVING TRACK */}
           <div
             style={{
               position: "relative",
@@ -188,19 +217,29 @@ export default function ManageBooking() {
               marginTop: 20,
               background: "#111827",
               borderRadius: 40,
+              overflow: "hidden",
             }}
           >
+            {/* ROAD */}
+            <div
+              style={{
+                position: "absolute",
+                width: "200%",
+                height: 4,
+                top: "50%",
+                background:
+                  "repeating-linear-gradient(90deg, #555 0 20px, transparent 20px 40px)",
+                animation: "moveRoad 1s linear infinite",
+              }}
+            />
+
             {/* START */}
-            <div style={{ position: "absolute", left: 10, top: 20 }}>
-              📍
-            </div>
+            <div style={{ position: "absolute", left: 10, top: 20 }}>📍</div>
 
             {/* END */}
-            <div style={{ position: "absolute", right: 10, top: 20 }}>
-              🟢
-            </div>
+            <div style={{ position: "absolute", right: 10, top: 20 }}>🟢</div>
 
-            {/* TAXI RIGHT ➝ LEFT */}
+            {/* TAXI */}
             <div
               style={{
                 position: "absolute",
@@ -217,44 +256,27 @@ export default function ManageBooking() {
         </div>
       )}
 
-      {/* ❌ BIG CANCEL STATUS */}
+      {/* ❌ CANCEL STATUS */}
       {isCancelled && (
-        <h1
-          style={{
-            color: "red",
-            marginTop: 30,
-            textAlign: "center",
-            fontWeight: "bold",
-          }}
-        >
+        <h1 style={{ color: "red", marginTop: 30, textAlign: "center" }}>
           ❌ BOOKING CANCELLED
         </h1>
       )}
 
-     {booking && (
-  <div style={{ marginTop: 20, background: "#111827", padding: 15, borderRadius: 10 }}>
+      {/* DETAILS */}
+      {booking && (
+        <div style={{ marginTop: 20 }}>
+          <p><b>Status:</b> {booking.status}</p>
+        </div>
+      )}
 
-    {/* STATUS */}
-    <p>
-      <b>Status:</b>{" "}
-      <span style={{ color: booking.status === "Cancelled" ? "red" : "#22c55e" }}>
-        {booking.status}
-      </span>
-    </p>
-
-    {/* BOOKING DETAILS */}
-    <div style={{ marginTop: 10, lineHeight: "1.8" }}>
-      <p>👤 <b>Name:</b> {booking.name}</p>
-      <p>📞 <b>Phone:</b> {booking.phone}</p>
-      <p>📍 <b>Pickup:</b> {booking.pickup}</p>
-      <p>🏁 <b>Dropoff:</b> {booking.dropoff}</p>
-      <p>📅 <b>Date:</b> {booking.date}</p>
-      <p>📆 <b>Day:</b> {booking.pickupDay}</p>
-      <p>⏰ <b>Time:</b> {booking.time}</p>
-    </div>
-
-  </div>
-)}
+      {/* ANIMATION */}
+      <style jsx>{`
+        @keyframes moveRoad {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+      `}</style>
     </div>
   );
 }
