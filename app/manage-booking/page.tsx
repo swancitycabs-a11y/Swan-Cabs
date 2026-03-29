@@ -181,34 +181,6 @@ export default function ManageBooking() {
       {view === "track" && booking && !isCancelled && (
         <div style={{ marginTop: 30 }}>
 
-          {/* 🚀 UBER STATUS */}
-          <div style={{ marginBottom: 15 }}>
-            {liveStatus === "searching" && <h3>🔍 Searching driver...</h3>}
-            {liveStatus === "assigned" && <h3>👨‍✈️ Driver assigned</h3>}
-            {liveStatus === "arriving" && etaMinutes !== null && etaMinutes > 0 && (
-              <h2>🚕 Arriving in {etaMinutes} min</h2>
-            )}
-            {liveStatus === "arrived" && (
-              <h2 style={{ color: "#22c55e" }}>✅ Driver has arrived</h2>
-            )}
-          </div>
-
-          {/* STATUS BAR */}
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-            <span style={{ color: "#22c55e" }}>Searching</span>
-            <span style={{ color: ["assigned","arriving","arrived"].includes(liveStatus) ? "#22c55e" : "#fff" }}>Assigned</span>
-            <span style={{ color: ["arriving","arrived"].includes(liveStatus) ? "#22c55e" : "#fff" }}>Arriving</span>
-            <span style={{ color: liveStatus === "arrived" ? "#22c55e" : "#fff" }}>Arrived</span>
-          </div>
-
-          {/* DETAILS */}
-          <div style={{ marginTop: 15 }}>
-            <p>👤 {booking.name}</p>
-            <p>📞 {booking.phone}</p>
-            <p>📍 {booking.pickup}</p>
-            <p>🏁 {booking.dropoff}</p>
-          </div>
-
           {/* 🚕 MOVING TRACK */}
           <div
             style={{
