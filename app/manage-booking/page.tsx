@@ -61,7 +61,6 @@ function ManageBookingPage() {
       body: JSON.stringify({ bookingId }),
     });
 
-    // instant UI update
     setBooking((prev: any) => ({
       ...prev,
       status: "Cancelled",
@@ -73,13 +72,11 @@ function ManageBookingPage() {
   const isCancelled =
     booking?.status?.toLowerCase?.() === "cancelled";
 
-  // 🚕 SETUP TIMER
   useEffect(() => {
     if (!booking || isCancelled) return;
 
     let target: number | null = null;
 
-    // ASAP
     if (booking.bookingWhen === "now") {
       const stored = localStorage.getItem(`eta-${booking.bookingId}`);
 
@@ -93,7 +90,6 @@ function ManageBookingPage() {
       setIsTrackingActive(true);
     }
 
-    // SCHEDULED
     if (booking.bookingWhen === "later") {
       const pickupTime = new Date(`${booking.date}T${booking.time}`).getTime();
       const now = Date.now();
@@ -118,7 +114,6 @@ function ManageBookingPage() {
     setLiveStatus("assigned");
   }, [booking]);
 
-  // ⏱ REAL TIMER WITH SECONDS
   useEffect(() => {
     if (!targetTime || isCancelled || !isTrackingActive) return;
 
@@ -150,7 +145,6 @@ function ManageBookingPage() {
     return () => clearInterval(interval);
   }, [targetTime, isTrackingActive]);
 
-  // 🔗 AUTO LOAD FROM LINK
   useEffect(() => {
     const id = searchParams.get("bookingId");
 
@@ -232,31 +226,57 @@ function ManageBookingPage() {
               : "Calculating ETA..."}
           </h2>
 
+          {/* 🔥 NEW ROAD UI */}
           <div style={{
             position: "relative",
-            height: 70,
+            height: 80,
             marginTop: 20,
             background: "#111827",
-            borderRadius: 40
+            borderRadius: 50,
+            overflow: "hidden",
           }}>
-            <div style={{ position: "absolute", left: 10, top: 20 }}>📍</div>
-            <div style={{ position: "absolute", right: 10, top: 20 }}>🟢</div>
+
+            <div style={{
+              position: "absolute",
+              top: "50%",
+              left: 0,
+              width: "200%",
+              height: 4,
+              backgroundImage: "repeating-linear-gradient(to right, #888 0 20px, transparent 20px 40px)",
+              animation: "roadMove 1s linear infinite",
+              transform: "translateY(-50%)",
+            }} />
+
+            <div style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}>📍</div>
+            <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)" }}>🟢</div>
 
             <div style={{
               position: "absolute",
               left: `${carProgress}%`,
               top: "50%",
               transform: "translate(-50%, -50%)",
-              fontSize: 36,
+              fontSize: 32,
+              animation: "bounce 0.6s infinite alternate",
               transition: "left 1s linear",
             }}>
               🚕💨
             </div>
           </div>
+
+          <style jsx>{`
+            @keyframes roadMove {
+              from { transform: translateX(0) translateY(-50%); }
+              to { transform: translateX(-40px) translateY(-50%); }
+            }
+
+            @keyframes bounce {
+              from { transform: translate(-50%, -55%); }
+              to { transform: translate(-50%, -45%); }
+            }
+          `}</style>
         </div>
       )}
 
-      {/* ⏳ NOT STARTED */}
       {view === "track" && booking && !isCancelled && !isTrackingActive && (
         <div style={{ marginTop: 30 }}>
           <h2>📅 Booking Scheduled</h2>
@@ -264,14 +284,12 @@ function ManageBookingPage() {
         </div>
       )}
 
-      {/* ❌ CANCELLED */}
       {isCancelled && (
         <h1 style={{ color: "red", marginTop: 30, textAlign: "center" }}>
           ❌ BOOKING CANCELLED
         </h1>
       )}
 
-      {/* 📄 DETAILS */}
       {booking && (
         <div style={{ marginTop: 20 }}>
           <p><b>Status:</b> {booking.status}</p>
