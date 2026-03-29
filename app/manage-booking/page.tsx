@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
-  function ManageBookingPage() {
+function ManageBookingPage() {
   const [bookingId, setBookingId] = useState("");
   const [booking, setBooking] = useState<any>(null);
   const [showOptions, setShowOptions] = useState(false);
@@ -17,7 +17,6 @@ import { Suspense } from "react";
 
   const [liveStatus, setLiveStatus] = useState("searching");
 
-  // 🔍 SEARCH
   async function searchBooking() {
     const res = await fetch("/api/get-booking", {
       method: "POST",
@@ -34,7 +33,6 @@ import { Suspense } from "react";
     setView(null);
   }
 
-  // ✅ NEW: AUTO SEARCH FROM LINK
   async function searchBookingWithId(id: string) {
     try {
       const res = await fetch("/api/get-booking", {
@@ -50,14 +48,13 @@ import { Suspense } from "react";
       if (data?.booking) {
         setBooking(data.booking);
         setShowOptions(true);
-        setView("track"); // auto open tracking
+        setView("track");
       }
     } catch (err) {
       console.error(err);
     }
   }
 
-  // ❌ CANCEL (INSTANT UI UPDATE)
   async function cancelBooking() {
     await fetch("/api/cancel-booking", {
       method: "POST",
@@ -74,7 +71,6 @@ import { Suspense } from "react";
   const isCancelled =
     booking?.status?.toLowerCase?.() === "cancelled";
 
-  // 🚕 SET TIMER
   useEffect(() => {
     if (!booking || isCancelled) return;
 
@@ -92,7 +88,6 @@ import { Suspense } from "react";
     setLiveStatus("assigned");
   }, [booking]);
 
-  // 🚕 REAL TIMER
   useEffect(() => {
     if (!targetTime || isCancelled) return;
 
@@ -122,7 +117,6 @@ import { Suspense } from "react";
     return () => clearInterval(interval);
   }, [targetTime]);
 
-  // ✅ NEW: AUTO LOAD FROM URL
   useEffect(() => {
     const id = searchParams.get("bookingId");
 
@@ -159,7 +153,6 @@ import { Suspense } from "react";
         Find Booking
       </button>
 
-      {/* BUTTONS */}
       {showOptions && booking && (
         <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
           <button
@@ -192,7 +185,6 @@ import { Suspense } from "react";
         </div>
       )}
 
-      {/* 🚕 TRACK */}
       {view === "track" && booking && !isCancelled && (
         <div style={{ marginTop: 30 }}>
           <h2>🚕 Taxi is on the way to pickup</h2>
@@ -203,57 +195,32 @@ import { Suspense } from "react";
               : `⏱ Arriving in ${etaMinutes} minutes`}
           </h2>
 
-          <div
-            style={{
-              position: "relative",
-              height: 70,
-              marginTop: 20,
-              background: "#111827",
-              borderRadius: 40,
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                width: "200%",
-                height: 4,
-                top: "50%",
-                background:
-                  "repeating-linear-gradient(90deg, #555 0 20px, transparent 20px 40px)",
-                animation: "moveRoad 1s linear infinite",
-              }}
-            />
-
+          <div style={{ position: "relative", height: 70, marginTop: 20, background: "#111827", borderRadius: 40 }}>
             <div style={{ position: "absolute", left: 10, top: 20 }}>📍</div>
             <div style={{ position: "absolute", right: 10, top: 20 }}>🟢</div>
 
-            <div
-              style={{
-                position: "absolute",
-                left: `${carProgress}%`,
-                top: "50%",
-                transform: "translate(-50%, -50%)",
-                fontSize: 36,
-                transition: "left 1s linear",
-              }}
-            >
+            <div style={{
+              position: "absolute",
+              left: `${carProgress}%`,
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              fontSize: 36,
+              transition: "left 1s linear",
+            }}>
               🚕💨
             </div>
           </div>
         </div>
       )}
 
-      {/* ❌ CANCEL */}
       {isCancelled && (
         <h1 style={{ color: "red", marginTop: 30, textAlign: "center" }}>
           ❌ BOOKING CANCELLED
         </h1>
       )}
 
-      {/* 📋 DETAILS */}
       {booking && (
-        <div style={{ marginTop: 20, background: "#111827", padding: 15, borderRadius: 10 }}>
+        <div style={{ marginTop: 20 }}>
           <p><b>Status:</b> {booking.status}</p>
           <p>👤 {booking.name}</p>
           <p>📞 {booking.phone}</p>
@@ -264,15 +231,12 @@ import { Suspense } from "react";
           <p>⏰ {booking.time}</p>
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes moveRoad {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
-        }
-      `}</style>
     </div>
-    export default function Page() {
+  );
+}
+
+// ✅ CORRECT EXPORT
+export default function Page() {
   return (
     <Suspense fallback={<div>Loading booking...</div>}>
       <ManageBookingPage />
