@@ -318,7 +318,7 @@ export default function ManageBooking() {
       )}
       {isCancelled && (
   <p style={{ color: "#f87171", marginTop: 10 }}>
-    ❌ This booking has been cancelled. Tracking disabled.
+    ❌ This booking has been cancelled. 
   </p>
 )}
     </div>
