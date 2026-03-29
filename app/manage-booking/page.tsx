@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function ManageBooking() {
   const [bookingId, setBookingId] = useState("");
   const [booking, setBooking] = useState<any>(null);
   const [showOptions, setShowOptions] = useState(false);
   const [view, setView] = useState<"track" | null>(null);
+  const searchParams = useSearchParams();
 
   const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
   const [carProgress, setCarProgress] = useState(100);
@@ -31,6 +33,29 @@ export default function ManageBooking() {
     setView(null);
   }
 
+  // ✅ NEW: AUTO SEARCH FROM LINK
+  async function searchBookingWithId(id: string) {
+    try {
+      const res = await fetch("/api/get-booking", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ bookingId: id }),
+      });
+
+      const data = await res.json();
+
+      if (data?.booking) {
+        setBooking(data.booking);
+        setShowOptions(true);
+        setView("track"); // auto open tracking
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   // ❌ CANCEL (INSTANT UI UPDATE)
   async function cancelBooking() {
     await fetch("/api/cancel-booking", {
@@ -39,7 +64,6 @@ export default function ManageBooking() {
       body: JSON.stringify({ bookingId }),
     });
 
-    // ⚡ INSTANT UPDATE
     setBooking((prev: any) => ({
       ...prev,
       status: "Cancelled",
@@ -96,6 +120,19 @@ export default function ManageBooking() {
 
     return () => clearInterval(interval);
   }, [targetTime]);
+
+  // ✅ NEW: AUTO LOAD FROM URL
+  useEffect(() => {
+    const id = searchParams.get("bookingId");
+
+    if (id) {
+      setBookingId(id);
+
+      setTimeout(() => {
+        searchBookingWithId(id);
+      }, 300);
+    }
+  }, []);
 
   return (
     <div style={{ padding: 20, maxWidth: 800, margin: "auto" }}>
@@ -157,18 +194,14 @@ export default function ManageBooking() {
       {/* 🚕 TRACK */}
       {view === "track" && booking && !isCancelled && (
         <div style={{ marginTop: 30 }}>
-
-          {/* 🚕 DRIVER STATUS */}
           <h2>🚕 Taxi is on the way to pickup</h2>
 
-          {/* ⏱ ETA */}
           <h2>
             {etaMinutes === 0
               ? "✅ Driver arrived"
               : `⏱ Arriving in ${etaMinutes} minutes`}
           </h2>
 
-          {/* 🚕 TRACK BAR */}
           <div
             style={{
               position: "relative",
