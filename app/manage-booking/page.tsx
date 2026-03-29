@@ -175,10 +175,11 @@ export default function ManageBooking() {
           </h2>
 
           {/* DETAILS */}
+          <p>👤 Name: {booking.name}</p>
+          <p>👤 Name: {booking.phone}</p>
           <p>📍 Pickup: {booking.pickup}</p>
           <p>🏁 Dropoff: {booking.dropoff}</p>
-          <p>👤 Name: {booking.name}</p>
-
+          
           {/* TRACK BAR */}
           <div
             style={{
@@ -230,12 +231,30 @@ export default function ManageBooking() {
         </h1>
       )}
 
-      {/* DETAILS ALWAYS VISIBLE */}
-      {booking && (
-        <div style={{ marginTop: 20 }}>
-          <p><b>Status:</b> {booking.status}</p>
-        </div>
-      )}
+     {booking && (
+  <div style={{ marginTop: 20, background: "#111827", padding: 15, borderRadius: 10 }}>
+
+    {/* STATUS */}
+    <p>
+      <b>Status:</b>{" "}
+      <span style={{ color: booking.status === "Cancelled" ? "red" : "#22c55e" }}>
+        {booking.status}
+      </span>
+    </p>
+
+    {/* BOOKING DETAILS */}
+    <div style={{ marginTop: 10, lineHeight: "1.8" }}>
+      <p>👤 <b>Name:</b> {booking.name}</p>
+      <p>📞 <b>Phone:</b> {booking.phone}</p>
+      <p>📍 <b>Pickup:</b> {booking.pickup}</p>
+      <p>🏁 <b>Dropoff:</b> {booking.dropoff}</p>
+      <p>📅 <b>Date:</b> {booking.date}</p>
+      <p>📆 <b>Day:</b> {booking.pickupDay}</p>
+      <p>⏰ <b>Time:</b> {booking.time}</p>
+    </div>
+
+  </div>
+)}
     </div>
   );
 }
