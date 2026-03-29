@@ -226,7 +226,7 @@ export default function ManageBooking() {
       )}
 
       {/* 🚕 TRACK VIEW */}
-      {view === "track" && booking && (
+      {view === "track" && booking && !isCancelled && (
         <div style={{ marginTop: 30 }}>
           <h3>🚕 Taxi is on the way</h3>
 
@@ -316,6 +316,11 @@ export default function ManageBooking() {
           </span>
         </div>
       )}
+      {isCancelled && (
+  <p style={{ color: "#f87171", marginTop: 10 }}>
+    ❌ This booking has been cancelled. Tracking disabled.
+  </p>
+)}
     </div>
   );
 }
