@@ -170,34 +170,59 @@ export default function ManageBooking() {
       {/* OPTIONS */}
       {showOptions && booking && (
         <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-          <button
-            onClick={() => setView("track")}
-            style={{ flex: 1, padding: 12, background: "#3b82f6", color: "#fff", borderRadius: 10 }}
-          >
-            🚕 Track
-          </button>
+  
+  {/* 🚕 TRACK */}
+  <button
+    onClick={() => setView("track")}
+    disabled={isCancelled}
+    style={{
+      flex: 1,
+      padding: 12,
+      background: isCancelled ? "#555" : "#3b82f6",
+      color: "#fff",
+      borderRadius: 10,
+      cursor: isCancelled ? "not-allowed" : "pointer",
+      opacity: isCancelled ? 0.6 : 1,
+    }}
+  >
+    🚕 Track
+  </button>
 
-          <button
-            onClick={() => setView("edit")}
-            style={{ flex: 1, padding: 12, background: "#22c55e", color: "#fff", borderRadius: 10 }}
-          >
-            ✏️ Update
-          </button>
+  {/* ✏️ UPDATE */}
+  <button
+    onClick={() => setView("edit")}
+    disabled={isCancelled}
+    style={{
+      flex: 1,
+      padding: 12,
+      background: isCancelled ? "#555" : "#22c55e",
+      color: "#fff",
+      borderRadius: 10,
+      cursor: isCancelled ? "not-allowed" : "pointer",
+      opacity: isCancelled ? 0.6 : 1,
+    }}
+  >
+    ✏️ Update
+  </button>
 
-          <button
-            onClick={cancelBooking}
-            disabled={isCancelled}
-            style={{
-              flex: 1,
-              padding: 12,
-              background: isCancelled ? "#555" : "#ef4444",
-              color: "#fff",
-              borderRadius: 10,
-            }}
-          >
-            ❌ Cancel
-          </button>
-        </div>
+  {/* ❌ CANCEL */}
+  <button
+    onClick={cancelBooking}
+    disabled={isCancelled}
+    style={{
+      flex: 1,
+      padding: 12,
+      background: isCancelled ? "#555" : "#ef4444",
+      color: "#fff",
+      borderRadius: 10,
+      cursor: isCancelled ? "not-allowed" : "pointer",
+      opacity: isCancelled ? 0.6 : 1,
+    }}
+  >
+    ❌ Cancel
+  </button>
+
+</div>
       )}
 
       {/* 🚕 TRACK VIEW */}
