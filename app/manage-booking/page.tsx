@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function ManageBooking() {
+  function ManageBookingPage() {
   const [bookingId, setBookingId] = useState("");
   const [booking, setBooking] = useState<any>(null);
   const [showOptions, setShowOptions] = useState(false);
@@ -271,5 +272,11 @@ export default function ManageBooking() {
         }
       `}</style>
     </div>
+    export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading booking...</div>}>
+      <ManageBookingPage />
+    </Suspense>
   );
 }
+  
