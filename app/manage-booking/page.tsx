@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 export default function ManageBooking() {
   const [bookingId, setBookingId] = useState("");
   const [booking, setBooking] = useState<any>(null);
-  const [msg, setMsg] = useState("");
   const [showOptions, setShowOptions] = useState(false);
   const [view, setView] = useState<"track" | null>(null);
 
@@ -25,30 +24,26 @@ export default function ManageBooking() {
 
     const data = await res.json();
 
-    if (!data?.booking) {
-      setMsg("❌ Booking not found");
-      return;
-    }
+    if (!data?.booking) return;
 
     setBooking(data.booking);
     setShowOptions(true);
-    setMsg("");
     setView(null);
   }
 
-  // ❌ CANCEL
+  // ❌ CANCEL (INSTANT UI UPDATE)
   async function cancelBooking() {
-    const res = await fetch("/api/cancel-booking", {
+    await fetch("/api/cancel-booking", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ bookingId }),
     });
 
-    const data = await res.json();
-
-    if (data.ok) {
-      await searchBooking();
-    }
+    // ⚡ INSTANT UPDATE
+    setBooking((prev: any) => ({
+      ...prev,
+      status: "Cancelled",
+    }));
   }
 
   const isCancelled =
@@ -56,7 +51,7 @@ export default function ManageBooking() {
 
   // 🚕 SET TIMER
   useEffect(() => {
-    if (!booking) return;
+    if (!booking || isCancelled) return;
 
     let target: number | null = null;
 
@@ -64,35 +59,17 @@ export default function ManageBooking() {
       target = Date.now() + 12 * 60 * 1000;
     }
 
-    if (booking.bookingWhen === "later") {
-      const pickup = new Date(`${booking.date}T${booking.time}`).getTime();
-      const diff = pickup - Date.now();
-
-      if (diff <= 15 * 60 * 1000) {
-        target = Date.now() + 15 * 60 * 1000;
-      } else {
-        setEtaMinutes(null);
-        return;
-      }
-    }
-
     if (target !== null) {
       setTargetTime(target);
     }
 
     setCarProgress(100);
-    setLiveStatus("searching");
-
-    const timer = setTimeout(() => {
-      setLiveStatus("assigned");
-    }, 3000);
-
-    return () => clearTimeout(timer);
+    setLiveStatus("assigned");
   }, [booking]);
 
-  // 🚕 REAL TIMER + STATUS FLOW
+  // 🚕 REAL TIMER
   useEffect(() => {
-    if (!targetTime) return;
+    if (!targetTime || isCancelled) return;
 
     const interval = setInterval(() => {
       const diff = targetTime - Date.now();
@@ -177,11 +154,21 @@ export default function ManageBooking() {
         </div>
       )}
 
-      {/* 🚕 TRACK VIEW */}
+      {/* 🚕 TRACK */}
       {view === "track" && booking && !isCancelled && (
         <div style={{ marginTop: 30 }}>
 
-          {/* 🚕 MOVING TRACK */}
+          {/* 🚕 DRIVER STATUS */}
+          <h2>🚕 Taxi is on the way to pickup</h2>
+
+          {/* ⏱ ETA */}
+          <h2>
+            {etaMinutes === 0
+              ? "✅ Driver arrived"
+              : `⏱ Arriving in ${etaMinutes} minutes`}
+          </h2>
+
+          {/* 🚕 TRACK BAR */}
           <div
             style={{
               position: "relative",
@@ -192,7 +179,6 @@ export default function ManageBooking() {
               overflow: "hidden",
             }}
           >
-            {/* ROAD */}
             <div
               style={{
                 position: "absolute",
@@ -205,13 +191,9 @@ export default function ManageBooking() {
               }}
             />
 
-            {/* START */}
             <div style={{ position: "absolute", left: 10, top: 20 }}>📍</div>
-
-            {/* END */}
             <div style={{ position: "absolute", right: 10, top: 20 }}>🟢</div>
 
-            {/* TAXI */}
             <div
               style={{
                 position: "absolute",
@@ -228,39 +210,27 @@ export default function ManageBooking() {
         </div>
       )}
 
-      {/* ❌ CANCEL STATUS */}
+      {/* ❌ CANCEL */}
       {isCancelled && (
         <h1 style={{ color: "red", marginTop: 30, textAlign: "center" }}>
           ❌ BOOKING CANCELLED
         </h1>
       )}
 
+      {/* 📋 DETAILS */}
       {booking && (
-  <div style={{ marginTop: 20, background: "#111827", padding: 15, borderRadius: 10 }}>
+        <div style={{ marginTop: 20, background: "#111827", padding: 15, borderRadius: 10 }}>
+          <p><b>Status:</b> {booking.status}</p>
+          <p>👤 {booking.name}</p>
+          <p>📞 {booking.phone}</p>
+          <p>📍 {booking.pickup}</p>
+          <p>🏁 {booking.dropoff}</p>
+          <p>📅 {booking.date}</p>
+          <p>📆 {booking.pickupDay}</p>
+          <p>⏰ {booking.time}</p>
+        </div>
+      )}
 
-    {/* STATUS */}
-    <p>
-      <b>Status:</b>{" "}
-      <span style={{ color: booking.status === "Cancelled" ? "red" : "#22c55e" }}>
-        {booking.status}
-      </span>
-    </p>
-
-    {/* BOOKING DETAILS */}
-    <div style={{ marginTop: 10, lineHeight: "1.8" }}>
-      <p>👤 <b>Name:</b> {booking.name}</p>
-      <p>📞 <b>Phone:</b> {booking.phone}</p>
-      <p>📍 <b>Pickup:</b> {booking.pickup}</p>
-      <p>🏁 <b>Dropoff:</b> {booking.dropoff}</p>
-      <p>📅 <b>Date:</b> {booking.date}</p>
-      <p>📆 <b>Day:</b> {booking.pickupDay}</p>
-      <p>⏰ <b>Time:</b> {booking.time}</p>
-    </div>
-
-  </div>
-)}
-
-      {/* ANIMATION */}
       <style jsx>{`
         @keyframes moveRoad {
           from { transform: translateX(0); }
