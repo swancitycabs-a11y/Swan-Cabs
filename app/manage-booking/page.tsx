@@ -1,150 +1,119 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import BookingForm from "../components/BookingForm";
 
 export default function ManageBooking() {
   const [bookingId, setBookingId] = useState("");
   const [booking, setBooking] = useState<any>(null);
   const [msg, setMsg] = useState("");
   const [showOptions, setShowOptions] = useState(false);
-  const [view, setView] = useState<"track" | "edit" | null>(null);
+  const [view, setView] = useState<"track" | null>(null);
 
-  // 🚕 TRACKING STATES
-  const [etaMinutes, setEtaMinutes] = useState<number | null>(12);
-  const [carProgress, setCarProgress] = useState(0);
+  const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
+  const [carProgress, setCarProgress] = useState(100); // start from RIGHT
+  const [targetTime, setTargetTime] = useState<number | null>(null);
 
-  // 🔍 SEARCH BOOKING
+  // 🔍 SEARCH
   async function searchBooking() {
-    try {
-      const res = await fetch("/api/get-booking", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId }),
-      });
+    const res = await fetch("/api/get-booking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!data || !data.booking) {
-        setMsg("❌ Booking not found");
-        setBooking(null);
-        setShowOptions(false);
-        return;
-      }
-
-      setBooking(data.booking);
-      setMsg("");
-      setShowOptions(true);
-      setView(null);
-    } catch (err) {
-      console.error(err);
-      setMsg("❌ Something went wrong");
+    if (!data?.booking) {
+      setMsg("❌ Booking not found");
+      return;
     }
+
+    setBooking(data.booking);
+    setShowOptions(true);
+    setMsg("");
+    setView(null);
   }
 
-  // ❌ CANCEL BOOKING
+  // ❌ CANCEL
   async function cancelBooking() {
-    try {
-      const res = await fetch("/api/cancel-booking", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId }),
-      });
+    const res = await fetch("/api/cancel-booking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (data.ok) {
-        setMsg("✅ Booking cancelled");
-        await searchBooking();
-      } else {
-        setMsg("❌ Cancel failed");
-      }
-    } catch (err) {
-      console.error(err);
-      setMsg("❌ Cancel failed");
+    if (data.ok) {
+      await searchBooking();
     }
   }
 
   const isCancelled =
     booking?.status?.toLowerCase?.() === "cancelled";
 
-  // 🚕 ETA LOGIC (NOW vs LATER)
+  // 🚕 SET TIMER
   useEffect(() => {
     if (!booking) return;
 
+    let target;
+
     if (booking.bookingWhen === "now") {
-      setEtaMinutes(12);
-      setCarProgress(0);
-      return;
+      target = Date.now() + 12 * 60 * 1000;
     }
 
     if (booking.bookingWhen === "later") {
-      const pickupTime = new Date(`${booking.date}T${booking.time}`);
-      const now = new Date();
+      const pickup = new Date(`${booking.date}T${booking.time}`).getTime();
+      const diff = pickup - Date.now();
 
-      const diffMinutes =
-        (pickupTime.getTime() - now.getTime()) / 60000;
-
-      if (diffMinutes <= 15) {
-        setEtaMinutes(15);
-        setCarProgress(0);
+      if (diff <= 15 * 60 * 1000) {
+        target = Date.now() + 15 * 60 * 1000;
       } else {
         setEtaMinutes(null);
+        return;
       }
     }
+
+    setTargetTime(target);
+    setCarProgress(100); // start from right
   }, [booking]);
 
-  // 🚕 COUNTDOWN + SMOOTH ANIMATION
+  // 🚕 REAL COUNTDOWN
   useEffect(() => {
-    if (etaMinutes === null || etaMinutes <= 0) return;
+    if (!targetTime) return;
 
     const interval = setInterval(() => {
-      setEtaMinutes((prev) => {
-        if (!prev || prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
+      const diff = targetTime - Date.now();
 
-      setCarProgress((prev) => {
-        const step = 100 / 12;
-        return Math.min(100, prev + step);
-      });
-    }, 6000); // ⚡ change to 60000 for real time
+      if (diff <= 0) {
+        setEtaMinutes(0);
+        setCarProgress(0);
+        clearInterval(interval);
+        return;
+      }
+
+      const minutes = Math.ceil(diff / 60000);
+      setEtaMinutes(minutes);
+
+      const total = 12 * 60 * 1000;
+      const done = total - diff;
+
+      const progress = 100 - (done / total) * 100; // RIGHT ➝ LEFT
+      setCarProgress(Math.max(0, progress));
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, [etaMinutes]);
+  }, [targetTime]);
 
   return (
     <div style={{ padding: 20, maxWidth: 800, margin: "auto" }}>
-      {/* 🎨 PREMIUM ANIMATIONS */}
-      <style jsx>{`
-        @keyframes roadMove {
-          from { transform: translateX(0) translateY(-50%); }
-          to { transform: translateX(-50%) translateY(-50%); }
-        }
-
-        @keyframes carBounce {
-          0%, 100% { transform: translate(-50%, -50%) translateY(0); }
-          50% { transform: translate(-50%, -50%) translateY(-3px); }
-        }
-
-        @keyframes pulse {
-          0% { transform: translateY(-50%) scale(1); opacity: 1; }
-          50% { transform: translateY(-50%) scale(1.2); opacity: 0.7; }
-          100% { transform: translateY(-50%) scale(1); opacity: 1; }
-        }
-      `}</style>
-
       <h1>Manage Booking</h1>
 
-      {/* SEARCH */}
       <input
         placeholder="Enter Booking ID"
         value={bookingId}
         onChange={(e) => setBookingId(e.target.value.toUpperCase())}
-        style={{ width: "100%", padding: 10, marginBottom: 10 }}
+        style={{ width: "100%", padding: 10 }}
       />
 
       <button
@@ -153,136 +122,82 @@ export default function ManageBooking() {
           width: "100%",
           padding: 12,
           background: "#facc15",
-          border: "none",
+          marginTop: 10,
           borderRadius: 10,
-          fontWeight: "bold",
         }}
       >
         Find Booking
       </button>
 
-      {msg && (
-        <p style={{ marginTop: 10, color: "red", fontWeight: "bold" }}>
-          {msg}
-        </p>
-      )}
-
-      {/* OPTIONS */}
+      {/* BUTTONS */}
       {showOptions && booking && (
         <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-  
-  {/* 🚕 TRACK */}
-  <button
-    onClick={() => setView("track")}
-    disabled={isCancelled}
-    style={{
-      flex: 1,
-      padding: 12,
-      background: isCancelled ? "#555" : "#3b82f6",
-      color: "#fff",
-      borderRadius: 10,
-      cursor: isCancelled ? "not-allowed" : "pointer",
-      opacity: isCancelled ? 0.6 : 1,
-    }}
-  >
-    🚕 Track
-  </button>
+          <button
+            onClick={() => setView("track")}
+            disabled={isCancelled}
+            style={{
+              flex: 1,
+              padding: 12,
+              background: isCancelled ? "#555" : "#3b82f6",
+              color: "#fff",
+              borderRadius: 10,
+            }}
+          >
+            🚕 Track
+          </button>
 
-  {/* ✏️ UPDATE */}
-  <button
-    onClick={() => setView("edit")}
-    disabled={isCancelled}
-    style={{
-      flex: 1,
-      padding: 12,
-      background: isCancelled ? "#555" : "#22c55e",
-      color: "#fff",
-      borderRadius: 10,
-      cursor: isCancelled ? "not-allowed" : "pointer",
-      opacity: isCancelled ? 0.6 : 1,
-    }}
-  >
-    ✏️ Update
-  </button>
-
-  {/* ❌ CANCEL */}
-  <button
-    onClick={cancelBooking}
-    disabled={isCancelled}
-    style={{
-      flex: 1,
-      padding: 12,
-      background: isCancelled ? "#555" : "#ef4444",
-      color: "#fff",
-      borderRadius: 10,
-      cursor: isCancelled ? "not-allowed" : "pointer",
-      opacity: isCancelled ? 0.6 : 1,
-    }}
-  >
-    ❌ Cancel
-  </button>
-
-</div>
+          <button
+            onClick={cancelBooking}
+            disabled={isCancelled}
+            style={{
+              flex: 1,
+              padding: 12,
+              background: isCancelled ? "#555" : "#ef4444",
+              color: "#fff",
+              borderRadius: 10,
+            }}
+          >
+            ❌ Cancel
+          </button>
+        </div>
       )}
 
       {/* 🚕 TRACK VIEW */}
       {view === "track" && booking && !isCancelled && (
         <div style={{ marginTop: 30 }}>
-          <h3>🚕 Taxi is on the way</h3>
+          {/* ETA FIRST */}
+          <h2>
+            {etaMinutes === 0
+              ? "🚕 Driver has arrived"
+              : `⏱ Arriving in ${etaMinutes} minutes`}
+          </h2>
 
-          <p>📍 <b>Pickup:</b> {booking.pickup}</p>
+          {/* DETAILS */}
+          <p>📍 Pickup: {booking.pickup}</p>
+          <p>🏁 Dropoff: {booking.dropoff}</p>
+          <p>👤 Name: {booking.name}</p>
 
-          {etaMinutes === null ? (
-            <p>🕒 Driver will be assigned 15 minutes before pickup</p>
-          ) : (
-            <h2>⏱ Arriving in {etaMinutes} minutes</h2>
-          )}
-
-          {/* 🚕 PREMIUM TRACK */}
+          {/* TRACK BAR */}
           <div
             style={{
               position: "relative",
-              height: 80,
-              marginTop: 30,
+              height: 70,
+              marginTop: 20,
               background: "#111827",
               borderRadius: 40,
-              overflow: "hidden",
             }}
           >
-            {/* ROAD */}
-            <div
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: 0,
-                width: "200%",
-                height: 4,
-                background:
-                  "repeating-linear-gradient(90deg, #555 0 20px, transparent 20px 40px)",
-                transform: "translateY(-50%)",
-                animation: "roadMove 1s linear infinite",
-              }}
-            />
-
             {/* START */}
-            <div style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}>
-              🟢
-            </div>
-
-            {/* DESTINATION */}
-            <div
-              style={{
-                position: "absolute",
-                right: 10,
-                top: "50%",
-                transform: "translateY(-50%)",
-                animation: "pulse 1.5s infinite",
-              }}
-            >
+            <div style={{ position: "absolute", left: 10, top: 20 }}>
               📍
             </div>
 
-            {/* TAXI */}
+            {/* END */}
+            <div style={{ position: "absolute", right: 10, top: 20 }}>
+              🟢
+            </div>
+
+            {/* TAXI RIGHT ➝ LEFT */}
             <div
               style={{
                 position: "absolute",
@@ -290,37 +205,35 @@ export default function ManageBooking() {
                 top: "50%",
                 transform: "translate(-50%, -50%)",
                 fontSize: 36,
-                transition: "left 0.8s ease-in-out",
-                animation: "carBounce 0.6s infinite",
+                transition: "left 1s linear",
               }}
             >
-              🚕
+              🚕💨
             </div>
           </div>
         </div>
       )}
 
-      {/* UPDATE VIEW */}
-      {view === "edit" && booking && (
-        <div style={{ marginTop: 30 }}>
-          <BookingForm isEdit={true} initialData={booking} />
-        </div>
+      {/* ❌ BIG CANCEL STATUS */}
+      {isCancelled && (
+        <h1
+          style={{
+            color: "red",
+            marginTop: 30,
+            textAlign: "center",
+            fontWeight: "bold",
+          }}
+        >
+          ❌ BOOKING CANCELLED
+        </h1>
       )}
 
-      {/* STATUS */}
+      {/* DETAILS ALWAYS VISIBLE */}
       {booking && (
         <div style={{ marginTop: 20 }}>
-          <b>Status:</b>{" "}
-          <span style={{ color: isCancelled ? "red" : "#22c55e" }}>
-            {booking.status || "Booked"}
-          </span>
+          <p><b>Status:</b> {booking.status}</p>
         </div>
       )}
-      {isCancelled && (
-  <p style={{ color: "#f87171", marginTop: 10 }}>
-    ❌ This booking has been cancelled. 
-  </p>
-)}
     </div>
   );
 }
