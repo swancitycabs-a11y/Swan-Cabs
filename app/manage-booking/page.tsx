@@ -56,7 +56,7 @@ export default function ManageBooking() {
   useEffect(() => {
     if (!booking) return;
 
-    let target;
+    let target: number | null = null;
 
     if (booking.bookingWhen === "now") {
       target = Date.now() + 12 * 60 * 1000;
@@ -74,7 +74,9 @@ export default function ManageBooking() {
       }
     }
 
-    setTargetTime(target);
+    if (target !== null) {
+  setTargetTime(target);
+}
     setCarProgress(100); // start from right
   }, [booking]);
 
