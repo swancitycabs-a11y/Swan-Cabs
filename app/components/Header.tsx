@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 export default function Header() {
-  const phoneDisplay = "(+61) 400757549";
-  const phoneTel = "+61400757549";
+  const phoneDisplay = "(+61) 429526826";
+  const phoneTel = "+61429526826";
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
