@@ -13,7 +13,7 @@ export default function Contact() {
 
             <div className="card">
               <div style={{ fontWeight: 800 }}>Phone</div>
-              <div style={{ marginTop: 6 }}>+61 400 757 549</div>
+              <div style={{ marginTop: 6 }}>+61429526826</div>
             </div>
           </div>
 
@@ -33,7 +33,7 @@ export default function Contact() {
 
               <a
                 className="btn"
-                href="https://wa.me/61400757549"
+                href="https://wa.me/61436110488"
                 target="_blank"
                 rel="noreferrer"
               >
