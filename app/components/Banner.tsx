@@ -38,14 +38,14 @@ export default function Banner() {
                   Book a taxi
                 </a>
 
-                <a href="tel:+61400757549" className="btn primary">
+                <a href="tel:+61429526826" className="btn primary">
                   Call
                 </a>
 
                 <a
                   className="btn primary"
                   href={
-                    "sms:+61400757549?&body=" +
+                    "sms:+61429526826?&body=" +
                     encodeURIComponent("Hi, I’d like to book a taxi.")
                   }
                 >
