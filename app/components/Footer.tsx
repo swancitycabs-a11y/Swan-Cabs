@@ -4,11 +4,19 @@ export default function Footer() {
       <div className="container">
         <div className="grid cols-2" style={{ alignItems: "center" }}>
           <div>
-            <div style={{ fontWeight: 800 }}>Swan Cabs</div>
+            <div style={{ fontWeight: 800 }}>Swan City Cabs</div>
+
             <div className="small" style={{ marginTop: 6 }}>
-              © {new Date().getFullYear()} Swan Cabs. All rights reserved.
+              © {new Date().getFullYear()} Swan City Cabs. All rights reserved.
             </div>
+
+            {/* ✅ ADD THIS LINE */}
+            <div className="small" style={{ marginTop: 6, fontSize: "11px", opacity: 0.7 }}>
+              Swan Cabs is an independent taxi service and is not affiliated with Swan Taxis.
+            </div>
+
           </div>
+
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 14 }}>
             <a className="small" href="#services">Services</a>
             <a className="small" href="#testimonials">Reviews</a>
