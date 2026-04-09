@@ -78,7 +78,7 @@ export default function Banner() {
 
               <div className="card" style={{ padding: 14 }}>
                 <div style={{ fontWeight: 700 }}>
-                  Baby Seats, Maxi & Wheelchair
+                  Baby Seats, Maxi & Wheelchair Cabs
                 </div>
                 <div className="small">
                   Extra options when you need them.
