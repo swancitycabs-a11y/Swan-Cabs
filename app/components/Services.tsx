@@ -11,11 +11,11 @@ export default function Services() {
             <p className="small">Perth Airport pickups & drop-offs. Meet & greet available.</p>
           </div>
           <div className="card">
-            <div style={{ fontWeight: 800 }}>Maxi Taxi</div>
-            <p className="small">Perfect for groups, luggage, events, and nights out.</p>
+            <div style={{ fontWeight: 800 }}>Maxi Cab Service</div>
+            <p className="small">Ideal for groups, extra luggage, events, and larger travel needs.</p>
           </div>
           <div className="card">
-            <div style={{ fontWeight: 800 }}> Baby Seat / Wheelchair Taxi</div>
+            <div style={{ fontWeight: 800 }}> Baby Seat / Wheelchair Cab</div>
             <p className="small">Accessible rides with extra assistance options.</p>
           </div>
         </div>
