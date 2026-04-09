@@ -28,7 +28,7 @@ export default function Banner() {
 
             <p className="lead">
               Upfront estimate, reliable drivers, clean vehicles. Choose
-              Standard, Baby Seats, Maxi, or Wheelchair access.
+              Standard, Baby Seats, Maxi Cabs, or Wheelchair access.
             </p>
 
             {/* MOBILE CTA */}
