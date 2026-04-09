@@ -7,12 +7,12 @@ export default function Footer() {
             <div style={{ fontWeight: 800 }}>Swan City Cabs</div>
 
             <div className="small" style={{ marginTop: 6 }}>
-              © {new Date().getFullYear()} Swan City Cabs. All rights reserved.
+              © {new Date().getFullYear()} Swan Cabs. All rights reserved.
             </div>
 
             {/* ✅ ADD THIS LINE */}
             <div className="small" style={{ marginTop: 6, fontSize: "11px", opacity: 0.7 }}>
-              Swan Cabs is an independent taxi service and is not affiliated with Swan Taxis.
+              Swan Cabs is an independent taxi service and is not affiliated with Swan Taxis or any other Serivices.
             </div>
 
           </div>
