@@ -1,23 +1,23 @@
 import { NextResponse } from "next/server";
 
-export const runtime = "nodejs"; // required for server-side fetch + stable env
+export const runtime = "nodejs";
 
 const GOOGLE_TZ = "Australia/Perth";
 
-// --- Tariff table (Unbooked Service Fares as at 3 May 2024)
 const TARIFF = {
-  day: { flagfall: 5.4, perKm: 2.13, perHour: 61.0 }, // Mon–Fri 6am–6pm
-  night: { flagfall: 7.7, perKm: 2.13, perHour: 61.0 }, // night/weekend/public holiday
-  fivePlus: { flagfall: 7.7, perKm: 3.19, perHour: 95.0 }, // 5+ passengers
+  day: { flagfall: 5.4, perKm: 2.13, perHour: 61.0 },
+  night: { flagfall: 7.7, perKm: 2.13, perHour: 61.0 },
+  fivePlus: { flagfall: 7.7, perKm: 3.19, perHour: 95.0 },
 };
 
 const EXTRAS = {
   bookingFee: 1.9,
   airportFee: 4.5,
-  ultraPeak: 4.5, // approx
+  ultraPeak: 4.5,
   christmasDay: 6.4,
-  newYears: 7.4, // 6pm NYE to 6am NYD
-  babySeat: 15, // ✅ ADD THIS
+  newYears: 7.4,
+  babySeat: 15,
+  peakTrafficRate: 0.1,
 };
 
 function round2(n: number) {
@@ -40,10 +40,11 @@ function getPerthParts(date: Date) {
     hour12: false,
   }).formatToParts(date);
 
-  const get = (type: string) => parts.find((p) => p.type === type)?.value || "";
+  const get = (type: string) =>
+    parts.find((part) => part.type === type)?.value || "";
 
   return {
-    weekday: get("weekday"), // Mon, Tue...
+    weekday: get("weekday"),
     year: Number(get("year")),
     month: Number(get("month")),
     day: Number(get("day")),
@@ -52,7 +53,7 @@ function getPerthParts(date: Date) {
   };
 }
 
-function weekdayToIndex(w: string) {
+function weekdayToIndex(weekday: string) {
   const map: Record<string, number> = {
     Sun: 0,
     Mon: 1,
@@ -62,7 +63,8 @@ function weekdayToIndex(w: string) {
     Fri: 5,
     Sat: 6,
   };
-  return map[w] ?? -1;
+
+  return map[weekday] ?? -1;
 }
 
 function isDayTariff(perth: ReturnType<typeof getPerthParts>) {
@@ -72,11 +74,25 @@ function isDayTariff(perth: ReturnType<typeof getPerthParts>) {
   return isMonToFri && is6to18;
 }
 
+function isPeakTraffic(perth: ReturnType<typeof getPerthParts>) {
+  const minutesSinceMidnight = perth.hour * 60 + perth.minute;
+
+  const morningPeak =
+    minutesSinceMidnight >= 6 * 60 + 30 &&
+    minutesSinceMidnight < 9 * 60;
+
+  const afternoonPeak =
+    minutesSinceMidnight >= 14 * 60 + 30 &&
+    minutesSinceMidnight < 18 * 60;
+
+  return morningPeak || afternoonPeak;
+}
+
 function isUltraPeak(perth: ReturnType<typeof getPerthParts>) {
   const dayIndex = weekdayToIndex(perth.weekday);
-  if (dayIndex === 5) return true; // Fri
-  if (dayIndex === 6) return true; // Sat
-  if (dayIndex === 0 && perth.hour < 3) return true; // Sun early
+  if (dayIndex === 5) return true;
+  if (dayIndex === 6) return true;
+  if (dayIndex === 0 && perth.hour < 3) return true;
   return false;
 }
 
@@ -90,6 +106,11 @@ function isNewYearsSurcharge(perth: ReturnType<typeof getPerthParts>) {
   return false;
 }
 
+function parsePerthBookingDate(date: string, time: string) {
+  const parsed = new Date(`${date}T${time}:00+08:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 type FareBreakdown = {
   tariffLabel: string;
   flagfall: number;
@@ -101,10 +122,10 @@ type FareBreakdown = {
   ultraPeak: number;
   christmas: number;
   newYears: number;
-  babySeat: number; // ✅ ADD
+  babySeat: number;
+  peakTraffic: number;
   total: number;
 };
-
 
 function calcFare(params: {
   carType: string;
@@ -123,8 +144,6 @@ function calcFare(params: {
     tripDate,
     pickupText,
     serverStartAddress,
-  
-
   } = params;
 
   const perth = getPerthParts(tripDate);
@@ -139,14 +158,14 @@ function calcFare(params: {
   const tariff = fivePlusApplies
     ? TARIFF.fivePlus
     : isDayTariff(perth)
-    ? TARIFF.day
-    : TARIFF.night;
+      ? TARIFF.day
+      : TARIFF.night;
 
   const tariffLabel = fivePlusApplies
     ? "5+ passengers tariff"
     : isDayTariff(perth)
-    ? "Day tariff"
-    : "Night/Weekend tariff";
+      ? "Day tariff"
+      : "Night/Weekend tariff";
 
   const flagfall = tariff.flagfall;
   const distancePart = distanceKm > 0 ? distanceKm * tariff.perKm : 0;
@@ -155,23 +174,24 @@ function calcFare(params: {
   const timePart = timeHours > 0 ? timeHours * tariff.perHour : 0;
 
   const variablePart = Math.max(distancePart, timePart);
-
   const bookingFee = EXTRAS.bookingFee;
 
   const pickupLooksAirport =
-    isAirportPickup(pickupText) || isAirportPickup(serverStartAddress || "");
-  const airportFee = pickupLooksAirport ? EXTRAS.airportFee : 0;
+    isAirportPickup(pickupText) ||
+    isAirportPickup(serverStartAddress || "");
 
+  const airportFee = pickupLooksAirport ? EXTRAS.airportFee : 0;
   const ultraPeak = isUltraPeak(perth) ? EXTRAS.ultraPeak : 0;
   const christmas = isChristmasDay(perth) ? EXTRAS.christmasDay : 0;
   const newYears = isNewYearsSurcharge(perth) ? EXTRAS.newYears : 0;
 
   const babySeatFee =
-  carType === "Baby Seat Sedan" ||
-  carType === "Baby Seat Maxi Taxi 7 Pax"
-    ? EXTRAS.babySeat
-    : 0;
-   const total =
+    carType === "Baby Seat Sedan" ||
+    carType === "Baby Seat Maxi Taxi 7 Pax"
+      ? EXTRAS.babySeat
+      : 0;
+
+  const subtotal =
     flagfall +
     variablePart +
     bookingFee +
@@ -181,35 +201,44 @@ function calcFare(params: {
     babySeatFee +
     newYears;
 
-  return {
-  tariffLabel,
-  flagfall: round2(flagfall),
-  distancePart: round2(distancePart),
-  timePart: round2(timePart),
-  variablePart: round2(variablePart),
-  bookingFee: round2(bookingFee),
-  airportFee: round2(airportFee),
-  ultraPeak: round2(ultraPeak),
-  christmas: round2(christmas),
-  newYears: round2(newYears),
-  babySeat: round2(babySeatFee), // ✅ ADD
-  total: round2(total),
-};
+  const peakTraffic = isPeakTraffic(perth)
+    ? subtotal * EXTRAS.peakTrafficRate
+    : 0;
 
+  const total = subtotal + peakTraffic;
+
+  return {
+    tariffLabel,
+    flagfall: round2(flagfall),
+    distancePart: round2(distancePart),
+    timePart: round2(timePart),
+    variablePart: round2(variablePart),
+    bookingFee: round2(bookingFee),
+    airportFee: round2(airportFee),
+    ultraPeak: round2(ultraPeak),
+    christmas: round2(christmas),
+    newYears: round2(newYears),
+    babySeat: round2(babySeatFee),
+    peakTraffic: round2(peakTraffic),
+    total: round2(total),
+  };
 }
 
 async function fetchServerRoute(params: {
   serverKey: string;
   pickupPlaceId: string;
   dropoffPlaceId: string;
-  stopPlaceIds?: string[]; // ✅ NEW
+  stopPlaceIds?: string[];
 }) {
-  const { serverKey, pickupPlaceId, dropoffPlaceId, stopPlaceIds = [] } = params;
+  const {
+    serverKey,
+    pickupPlaceId,
+    dropoffPlaceId,
+    stopPlaceIds = [],
+  } = params;
 
-  // ✅ keep only valid stops, max 2
   const validStops = stopPlaceIds.filter(Boolean).slice(0, 2);
 
-  // ✅ waypoints in Google Directions API (place_id:)
   const waypointsParam =
     validStops.length > 0
       ? `&waypoints=${encodeURIComponent(
@@ -225,10 +254,13 @@ async function fetchServerRoute(params: {
     `&mode=driving` +
     `&key=${encodeURIComponent(serverKey)}`;
 
-  const r = await fetch(url, { method: "GET" });
-  const data = await r.json();
+  const response = await fetch(url, { method: "GET" });
+  const data = await response.json();
 
-  if (!r.ok) throw new Error(`Google Directions HTTP error: ${r.status}`);
+  if (!response.ok) {
+    throw new Error(`Google Directions HTTP error: ${response.status}`);
+  }
+
   if (data.status !== "OK") {
     throw new Error(
       `Google Directions error: ${data.status}${
@@ -237,10 +269,15 @@ async function fetchServerRoute(params: {
     );
   }
 
-  // ✅ sum ALL legs
   const legs = data.routes?.[0]?.legs ?? [];
-  const meters = legs.reduce((sum: number, l: any) => sum + (l?.distance?.value ?? 0), 0);
-  const seconds = legs.reduce((sum: number, l: any) => sum + (l?.duration?.value ?? 0), 0);
+  const meters = legs.reduce(
+    (sum: number, leg: any) => sum + (leg?.distance?.value ?? 0),
+    0
+  );
+  const seconds = legs.reduce(
+    (sum: number, leg: any) => sum + (leg?.duration?.value ?? 0),
+    0
+  );
 
   const firstLeg = legs[0];
   const lastLeg = legs[legs.length - 1];
@@ -278,21 +315,20 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Stops from client (max 2)
     const stopsRaw = (body?.stops as StopItem[]) || [];
     const stopPlaceIds = Array.isArray(stopsRaw)
       ? stopsRaw
-          .map((s) => String(s?.placeId || ""))
+          .map((stop) => String(stop?.placeId || ""))
           .filter(Boolean)
           .slice(0, 2)
       : [];
 
-    // Booking time for tariff
     const bookingWhen = (body?.bookingWhen as BookingWhen) || "now";
     const laterDate = body?.date as string | undefined;
     const laterTime = body?.time as string | undefined;
 
     let tripDate = new Date();
+
     if (
       bookingWhen === "later" &&
       laterDate &&
@@ -300,11 +336,10 @@ export async function POST(req: Request) {
       laterDate !== "now" &&
       laterTime !== "now"
     ) {
-      const d = new Date(`${laterDate}T${laterTime}:00`);
-      if (!Number.isNaN(d.getTime())) tripDate = d;
+      const parsedDate = parsePerthBookingDate(laterDate, laterTime);
+      if (parsedDate) tripDate = parsedDate;
     }
 
-    // ✅ Server route distance + duration (with stops)
     const route = await fetchServerRoute({
       serverKey,
       pickupPlaceId,
@@ -329,9 +364,9 @@ export async function POST(req: Request) {
       estimatedFare: fare.total,
       fareBreakdown: fare,
     });
-  } catch (e: any) {
+  } catch (error: any) {
     return NextResponse.json(
-      { ok: false, error: e?.message ?? "Unknown error" },
+      { ok: false, error: error?.message ?? "Unknown error" },
       { status: 500 }
     );
   }
